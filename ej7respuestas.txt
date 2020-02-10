@@ -1,0 +1,19 @@
+a)No se puede saber porque no se sabe si el procesador ejecuta primero el padre o el hijo
+Pero si padre 0 antes qe padre 1.
+
+b)
+/*Codigo anterior*/
+else if(pid ==  0)
+		{
+			printf("Hijo PID=%d y mi padre=%d\n", getpid(), getppid());
+			exit(EXIT_SUCCESS);
+		}
+/*...*/
+
+Usando getpid() para el propio ID y getppid() para el PID del padre.
+
+c)
+
+d) Deja huerfanos porque solo wait() solo espera a UN hijo.
+
+e)
