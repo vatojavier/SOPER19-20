@@ -21,6 +21,7 @@ int main(void){
  
     while (1)
     {
+        cmdCont = 0;
         printf("Introduce comando: ");
         
         if(fgets(comando,MAX_COM,stdin) == NULL){
@@ -39,16 +40,21 @@ int main(void){
         printf("%ld\n", strlen(token));
 
         
-        /*while( token != NULL ) {
-            printf("se metio");
-            
+        while(1) {
             token = strtok(NULL, " ");
+
+            if(token == NULL){
+                comSep[cmdCont] = NULL;
+                break;
+            }
+
             token[strcspn(token, "\n")] = '\0';
 
             comSep[cmdCont] = token;
             cmdCont++;
-        }*/
-        comSep[cmdCont] = NULL;
+        }
+
+        
 
         pid = fork();
 
