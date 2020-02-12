@@ -14,6 +14,12 @@ Usando getpid() para el propio ID y getppid() para el PID del padre.
 
 c)
 
-d) Deja huerfanos porque solo wait() solo espera a UN hijo.
+d) Deja huerfanos porque wait() solo espera a SOLO UN hijo.
 
 e)
+
+while((wait(NULL)) > 0){
+	printf("Hijo terminado\n");
+}
+
+

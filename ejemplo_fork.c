@@ -19,7 +19,7 @@ int main(void)
 		}
 		else if(pid ==  0)
 		{
-			printf("Hijo PID=%d y mi padre=%d\n", getpid(), getppid());
+			printf("Hijo PID=%d y mi padre=%d\n", getpid(), getppid()); /*mod ej7b*/
 			exit(EXIT_SUCCESS);
 		}
 		else if(pid >  0)
@@ -27,6 +27,10 @@ int main(void)
 			printf("Padre %d\n", i);
 		}
 	}
-	wait(NULL);
+
+	while((wait(NULL)) > 0){/*mod ej7e*/
+		printf("Hijo terminado\n");
+	}
+	 
 	exit(EXIT_SUCCESS);
 }

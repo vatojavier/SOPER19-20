@@ -19,7 +19,6 @@ int main(void){
 			exit(EXIT_FAILURE);
         }else if ( pid == 0){
             printf("Hijo %d\n", getpid());
-            
         }else if( pid > 0 ){
             printf("Padre \n");
             wait(NULL);
@@ -29,4 +28,6 @@ int main(void){
 
     }
 
+    printf("Soy el ultimo hijo\n");
+    exit(EXIT_SUCCESS);
 }

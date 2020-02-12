@@ -10,11 +10,15 @@
 #define MAX_COM 100
 
 int main(void){
+    pid_t pid;
 
-    char comando[MAX_COM];
+    char comando[MAX_COM];/*Comando introducido en un string*/
+    char *comSep[MAX_COM];/*Comando separado en strings*/
     char *token;
-    char separador[2] = " ";
 
+    int cmdCont = 0;
+
+ 
     while (1)
     {
         printf("Introduce comando: ");
@@ -24,10 +28,42 @@ int main(void){
             exit(0);
         }
 
-        token = strtok(comando, separador);
+        /* get the first token */
+        token = strtok(comando, " ");
+        printf("%s\n", token);
+        printf("%ld\n", strlen(token));
+        token[strcspn(token, "\n")] = '\0'; /*Eliminando el salto de linea*/
+        comSep[cmdCont] = token;
+        cmdCont++;
+        printf("%s\n", token);
+        printf("%ld\n", strlen(token));
 
-        printf("Has introducido %s",token);
+        
+        /*while( token != NULL ) {
+            printf("se metio");
+            
+            token = strtok(NULL, " ");
+            token[strcspn(token, "\n")] = '\0';
 
+            comSep[cmdCont] = token;
+            cmdCont++;
+        }*/
+        comSep[cmdCont] = NULL;
+
+        pid = fork();
+
+        if(pid < 0){
+            perror("fork");
+			exit(EXIT_FAILURE);
+        }else if( pid == 0){
+            printf("Ejecutando %s\n",comSep[0]);
+            execvp(comSep[0], comSep);
+            exit(EXIT_SUCCESS);
+        }else if (pid > 0){
+            wait(NULL);
+        }
+
+        
     }
     
 
