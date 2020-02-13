@@ -2,7 +2,7 @@
 CC=gcc
 CFLAGS= -g -Wall -pedantic
 LIBS = -lm
-EJEC= ejemplo_fork ej8 ejemplo_malloc ejercicio_shell aborto
+EJEC= ejemplo_fork ej8 ejemplo_malloc ejercicio_shell aborto ejercicio_shell_spawn
 
 # $@: es lo que esta a la izq del ':'
 # $<: es el 1º item en la lista de dependencias
@@ -42,6 +42,12 @@ aborto: aborto.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 aborto.o: aborto.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+ejercicio_shell_spawn: ejercicio_shell_spawn.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+ejercicio_shell_spawn.o: ejercicio_shell_spawn.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 clean:
