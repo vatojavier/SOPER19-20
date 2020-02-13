@@ -17,7 +17,7 @@ int main(void){
     char *token;
 
     int cmdCont = 0;
-
+    int wstatus, senial, status;
  
     while (1)
     {
@@ -31,13 +31,9 @@ int main(void){
 
         /* get the first token */
         token = strtok(comando, " ");
-        printf("%s\n", token);
-        printf("%ld\n", strlen(token));
         token[strcspn(token, "\n")] = '\0'; /*Eliminando el salto de linea*/
         comSep[cmdCont] = token;
         cmdCont++;
-        printf("%s\n", token);
-        printf("%ld\n", strlen(token));
 
         
         while(1) {
@@ -54,22 +50,31 @@ int main(void){
             cmdCont++;
         }
 
-        
-
         pid = fork();
 
         if(pid < 0){
             perror("fork");
 			exit(EXIT_FAILURE);
         }else if( pid == 0){
-            printf("Ejecutando %s\n",comSep[0]);
-            execvp(comSep[0], comSep);
+            if(execvp(comSep[0], comSep) == -1){
+                exit(EXIT_FAILURE);
+            }
             exit(EXIT_SUCCESS);
-        }else if (pid > 0){
-            wait(NULL);
-        }
 
-        
+        }else if (pid > 0){
+            wait(&wstatus);
+
+            /*Si termina por señal*/
+            if(WIFSTOPPED(wstatus)){
+                senial = WSTOPSIG(wstatus);
+                printf("Terminated by signal %d\n", senial);
+            }else if(WIFEXITED(wstatus)){
+                status = WEXITSTATUS(wstatus);
+                printf("Exited with value %d\n", status);
+            }else{
+                printf("OTRO\n");
+            }
+        }
     }
     
 
