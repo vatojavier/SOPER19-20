@@ -2,7 +2,7 @@
 CC=gcc
 CFLAGS= -g -Wall -pedantic
 LIBS = -lm
-EJEC= ejemplo_fork ej8 ejemplo_malloc ejercicio_shell aborto ejercicio_shell_spawn
+EJEC= ejemplo_fork ej8 ejemplo_malloc ejercicio_shell aborto ejercicio_shell_spawn ej3 ej4
 
 # $@: es lo que esta a la izq del ':'
 # $<: es el 1º item en la lista de dependencias
@@ -13,6 +13,18 @@ COMPRIMIR = *.c *.h Makefile *.txt
 
 all: $(EJEC)
 tests: $(TESTS)
+
+ej3: ej3.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+ej3.o: ej3.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+ej4: ej4.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+ej4.o: ej4.c
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 ejemplo_fork: ejemplo_fork.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
