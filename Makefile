@@ -2,7 +2,7 @@
 CC=gcc
 CFLAGS= -g -Wall -pedantic
 LIBS = -lm
-EJEC= ejemplo_fork ej8 ejemplo_malloc ejercicio_shell aborto ejercicio_shell_spawn ej3 ej4
+EJEC= ejemplo_fork ej8 ejemplo_malloc ejercicio_shell aborto ejercicio_shell_spawn ej3 ej4 ejemplo_descriptores ejemplo_buffer
 
 # $@: es lo que esta a la izq del ':'
 # $<: es el 1º item en la lista de dependencias
@@ -60,6 +60,18 @@ ejercicio_shell_spawn: ejercicio_shell_spawn.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 ejercicio_shell_spawn.o: ejercicio_shell_spawn.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+ejemplo_descriptores: ejemplo_descriptores.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+ejemplo_descriptores.o: ejemplo_descriptores.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+ejemplo_buffer: ejemplo_buffer.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+ejemplo_buffer.o: ejemplo_buffer.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 clean:
