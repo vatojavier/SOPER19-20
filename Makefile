@@ -1,8 +1,8 @@
 ########################################################
 CC=gcc
-CFLAGS= -g -Wall -pedantic
+CFLAGS= -g -Wall -pedantic -pthread
 LIBS = -lm
-EJEC= ejemplo_fork ej8 ejemplo_malloc ejercicio_shell aborto ejercicio_shell_spawn ej3 ej4 ejemplo_descriptores ejemplo_buffer
+EJEC= ejemplo_fork ej8 ejemplo_malloc ejercicio_shell aborto ejercicio_shell_spawn ej3 ej4 ejemplo_descriptores ejemplo_buffer ejemplo_pipe ejemplo_hilos
 
 # $@: es lo que esta a la izq del ':'
 # $<: es el 1º item en la lista de dependencias
@@ -72,6 +72,18 @@ ejemplo_buffer: ejemplo_buffer.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 ejemplo_buffer.o: ejemplo_buffer.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+ejemplo_pipe: ejemplo_pipe.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+ejemplo_pipe.o: ejemplo_pipe.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+ejemplo_hilos: ejemplo_hilos.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+ejemplo_hilos.o: ejemplo_hilos.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 clean:
