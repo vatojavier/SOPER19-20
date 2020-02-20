@@ -1,3 +1,13 @@
+/**
+ * @file ejercicio_arbol.c
+ *
+ * Ejercicio en el que se crea procesos tal y como se indica en el ej8.
+ * 
+ * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
+ * @date 20/2/2020
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

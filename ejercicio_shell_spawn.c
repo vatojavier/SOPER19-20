@@ -1,4 +1,12 @@
-/*P1 Ejercicio 10 optional*/
+/**
+ * @file ejercicio_shell.c
+ *
+ * Ejercicio opcional en el que se simula una shell con procesos usando posix_spawn
+ * 
+ * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
+ * @date 20/2/2020
+ *
+ */
 
 #include <stdio.h>
 #include <stdlib.h>

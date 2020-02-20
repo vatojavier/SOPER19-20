@@ -1,4 +1,12 @@
-/*P1 Ejercicio 10*/
+/**
+ * @file ejercicio_shell.c
+ *
+ * Ejercicio en el que se simula una shell con procesos
+ * 
+ * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
+ * @date 20/2/2020
+ *
+ */
 
 #include <stdio.h>
 #include <stdlib.h>

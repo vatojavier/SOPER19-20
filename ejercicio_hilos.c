@@ -1,7 +1,7 @@
 /**
  * @file ejercicio_hilos.c
  *
- * Ejercicio en el que se crean procesos y esos computan una operación matemática
+ * Ejercicio en el que se crean hilos y esos computan una operación matemática
  * 
  * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
  * @date 20/2/2020
