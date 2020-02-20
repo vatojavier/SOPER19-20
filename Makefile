@@ -86,10 +86,13 @@ ejemplo_hilos: ejemplo_hilos.o
 ejemplo_hilos.o: ejemplo_hilos.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-ejercicio_hilos: ejercicio_hilos.o
+ejercicio_hilos: ejercicio_hilos.o hilos.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 ejercicio_hilos.o: ejercicio_hilos.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+hilos.o: hilos.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 clean:
