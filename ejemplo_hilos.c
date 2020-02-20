@@ -15,7 +15,7 @@ void * slow_printf(void * arg)
 		sleep(1);
 	}
 
-	printf("77");
+	printf("%d\n", getpid());
 	fflush(stdout);
 
 	return NULL;
