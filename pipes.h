@@ -32,4 +32,30 @@ Salida:
 ************************************************************/
 int generar_numero();
 
+
+/***************************************************************
+Nombre: read_num_de.
+Descripcion: 
+    Lee de un pipe un numero
+Entrada:
+    int *pipe: el pipe a utilizar
+    int *num: puntero a el numero donde se guarda lo recibido
+Salida:
+    int: -1 si error, 0 si exito
+************************************************************/
+int read_num_de(int *pipe, int *num);
+
+
+/***************************************************************
+Nombre: write_num_de.
+Descripcion: 
+    Escribe en un pipe un numero
+Entrada:
+    int *pipe: el pipe a utilizar
+    int *num: puntero a el numero a escribir
+Salida:
+    int: -1 si error, 0 si éxito
+************************************************************/
+int write_num_en(int *pipe, int *num);
+
 #endif
