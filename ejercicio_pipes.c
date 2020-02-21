@@ -81,11 +81,12 @@ int main(void) {
         }
         fprintf(fp, "%d", n_rec_hijo);
         fclose(fp);
+
         exit(EXIT_SUCCESS);
     }
 
-    /*--- PADRE ---*/
 
+    /*--- PADRE ---*/
     /*Read de hijo 1*/
     ret = read_num_de(fd1, &n_rec_padre);
     if(ret == -1){
@@ -105,9 +106,6 @@ int main(void) {
 
     close(fd2[1]);
 
-    while (wait(NULL) > 0)
-    {
-
-    }
+    while (wait(NULL) > 0){}
      
 }
