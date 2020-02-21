@@ -17,7 +17,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <math.h>
-
+#include <time.h>
 
 
 /*Estructura que contiene los argumentos para los threads*/

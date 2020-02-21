@@ -2,7 +2,7 @@
 CC=gcc
 CFLAGS= -g -Wall -pedantic -pthread
 LIBS = -lm
-EJEC= ej8 ejercicio_shell aborto ejercicio_shell_spawn ejercicio_hilos
+EJEC= ejercicio_arbol ejercicio_shell aborto ejercicio_shell_spawn ejercicio_hilos ejercicio_pipes
 
 # $@: es lo que esta a la izq del ':'
 # $<: es el 1º item en la lista de dependencias
@@ -14,10 +14,10 @@ COMPRIMIR = *.c *.h Makefile *.txt
 all: $(EJEC)
 tests: $(TESTS)
 
-ej8: ej8.o
+ejercicio_arbol: ejercicio_arbol.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
-ej8.o: ej8.c
+ejercicio_arbol.o: ejercicio_arbol.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 ejercicio_shell: ejercicio_shell.o
@@ -44,7 +44,16 @@ ejercicio_hilos: ejercicio_hilos.o hilos.o
 ejercicio_hilos.o: ejercicio_hilos.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
+ejercicio_pipes: ejercicio_pipes.o pipes.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+ejercicio_pipes.o: ejercicio_pipes.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
 hilos.o: hilos.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+pipes.o: pipes.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 clean:
