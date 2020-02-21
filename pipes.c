@@ -24,7 +24,7 @@ int read_num_de(int *pipe, int *num){
     /* Leer algo de la tubería*/
     ssize_t nbytes = 0;
     do {
-        nbytes = read(pipe[0], num, sizeof(num));
+        nbytes = read(pipe[0], num, sizeof(int));
         if(nbytes == -1)
         {
             perror("read padre");
@@ -43,7 +43,7 @@ int write_num_en(int *pipe, int *num){
     /* Cierre del descriptor de salida en el hijo */
     close(pipe[0]);
 
-    ssize_t nbytes = write(pipe[1], num, sizeof(num));
+    ssize_t nbytes = write(pipe[1], num, sizeof(int));
     if(nbytes == -1)
     {
         perror("write");

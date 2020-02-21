@@ -8,6 +8,7 @@
  *
  */
 #include "pipes.h"
+#define FILE1 "numero_leido.txt"
 
 int main(void) {
     int fd1[2];
@@ -37,8 +38,8 @@ int main(void) {
     }else if (pid == 0){
 
         /*cerrar tuberia2 completa*/
-        close(fd2[0]);
-        close(fd2[1]);
+        /*close(fd2[0]);
+        close(fd2[1]);*/
 
         n_aleatorio = generar_numero();
         printf("Soy primer hijo, he generado el num %d\n", n_aleatorio);
@@ -49,7 +50,7 @@ int main(void) {
             exit(EXIT_FAILURE);
         }
 
-		printf("He escrito en el pipe\n");
+        close(fd1[1]);
 
         exit(EXIT_SUCCESS);
     }
@@ -72,8 +73,14 @@ int main(void) {
             exit(EXIT_FAILURE);
         }
 
-        printf("Soy hijo 2 he recibido %d\n", n_rec_hijo);
+        FILE *fp;
 
+        fp = fopen (FILE1,"w");
+        if(fp == NULL){
+            perror("open");
+        }
+        fprintf(fp, "%d", n_rec_hijo);
+        fclose(fp);
         exit(EXIT_SUCCESS);
     }
 
@@ -86,24 +93,21 @@ int main(void) {
         exit(EXIT_FAILURE);
     }
 
-    printf("Soy padre, recibido %d\n", n_rec_padre);
-
-    close(fd1[0]);
     close(fd1[1]);
+    close(fd1[0]);
 
-    printf("Voy a escribir a hijo\n");
-    /*Write a hijo 2*/
+    /*Write de hijo 1*/
     ret = write_num_en(fd2, &n_rec_padre);
     if(ret == -1){
         printf("Error al escribir en padre a hijo 2\n");
         exit(EXIT_FAILURE);
     }
 
+    close(fd2[1]);
+
     while (wait(NULL) > 0)
     {
-       printf("Un hijo terminado\n");
+
     }
      
-    printf("padre terminando!!!\n");
-	/*Para ej 15 cerrar las tuberias no utilizadas en cada proceso, ej1 cierra tuberia2 completamente*/
 }

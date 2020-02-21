@@ -19,6 +19,8 @@
 #include <math.h>
 #include <errno.h>
 #include <time.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 
 /***************************************************************
