@@ -1,0 +1,6 @@
+1.
+    a) man kill y especifica -l para mostrar la lista (kill -l)
+    b)SIGKILL tiene número 9 y SIGSTOP tiene número 19
+
+2.
+    a)

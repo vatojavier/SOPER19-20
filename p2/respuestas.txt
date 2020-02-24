@@ -1,0 +1,26 @@
+1.
+    a) man kill y especifica -l para mostrar la lista (kill -l)
+    b)SIGKILL tiene número 9 y SIGSTOP tiene número 19
+
+2.
+    a)
+    b)SIGSTOP para el proceso, no se pude escribir hasta que se le hace SIGCONT
+
+3.
+    a)No, arma el manejador, este será ejecutado cuando reciba un SIGINT
+    b)Se bloquea SIGINT para no volver a llamar al manejdaor si llegan mas SIGINTs
+    c)Aparece cuando se le manda la señal CTRL + C
+
+4.
+    a)Sa cierra
+    b)Con bucle de SIGACTION(i)
+
+5. 
+    a)Dentro del if
+    b)
+
+6. 
+    a)Cuando recibe SIGUSR1 o SIGUSR2 no ocurre nada porque esas dos señales están bloqueadas,
+Con SIGINT se cierra
+
+    b)
