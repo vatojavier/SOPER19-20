@@ -1,3 +1,13 @@
+/**
+ * @file ejercicio_kill.c
+ *
+ * Ejercicio en el que se matan procesos como en bash.
+ * 
+ * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
+ * @date 20/3/2020
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <semaphore.h>

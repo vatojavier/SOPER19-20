@@ -16,11 +16,12 @@
     b)Con bucle de SIGACTION(i)
 
 5. 
-    a)Dentro del if
-    b)
+    a)Dentro del if.
+    b)Para que el manejador pueda proporcionar algún tipo de información para el programa principal.
 
 6. 
     a)Cuando recibe SIGUSR1 o SIGUSR2 no ocurre nada porque esas dos señales están bloqueadas,
-Con SIGINT se cierra
+    Con SIGINT se cierra
 
-    b)
+    b)Cuando finaliza la espera el programa termina por la señal SIGUSR1, no se imprime porque al
+    haberse establecido la mascara anterior (que está vacía), no bloquea la señal.
