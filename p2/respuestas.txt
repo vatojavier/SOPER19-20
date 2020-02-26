@@ -3,7 +3,7 @@
     b)SIGKILL tiene número 9 y SIGSTOP tiene número 19
 
 2.
-    a)
+    a)Código ejercicio_kill.c
     b)SIGSTOP para el proceso, no se pude escribir hasta que se le hace SIGCONT
 
 3.
