@@ -2,7 +2,7 @@
 CC=gcc
 CFLAGS= -g -Wall -pedantic -pthread
 LIBS = -lm
-EJEC= ejercicio_captura ejercicio_captura_mejorado ejercicio_sigset
+EJEC= ejercicio_captura ejercicio_captura_mejorado ejercicio_sigset ejercicio_alarm
 
 # $@: es lo que esta a la izq del ':'
 # $<: es el 1º item en la lista de dependencias
@@ -30,6 +30,12 @@ ejercicio_sigset: ejercicio_sigset.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 ejercicio_sigset.o: ejercicio_sigset.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+	
+ejercicio_alarm: ejercicio_alarm.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+ejercicio_alarm.o: ejercicio_alarm.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 clean:

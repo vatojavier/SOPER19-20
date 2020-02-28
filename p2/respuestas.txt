@@ -13,7 +13,7 @@
 
 4.
     a)Sa cierra
-    b)Con bucle de SIGACTION(i)
+    b)Con bucle de SIGACTION(i) excepto SIGKILL y SIGSTOP según el manual.
 
 5. 
     a)Dentro del if.
@@ -25,3 +25,14 @@
 
     b)Cuando finaliza la espera el programa termina por la señal SIGUSR1, no se imprime porque al
     haberse establecido la mascara anterior (que está vacía), no bloquea la señal.
+
+7.	
+	a)Cuando se envia una señal se activa el manejador y se termina el programa.
+	b) Si se comenta sigaction el programa se cierra sin llamar al manejador. 
+	
+	
+	
+	
+	
+	
+	

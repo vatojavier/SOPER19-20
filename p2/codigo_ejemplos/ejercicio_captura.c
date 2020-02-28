@@ -17,10 +17,13 @@ int main(void) {
     sigemptyset(&(act.sa_mask));
     act.sa_flags = 0;
 
-    if (sigaction(SIGINT, &act, NULL) < 0) {
-        perror("sigaction");
-        exit(EXIT_FAILURE);
+    for(int i = 0; i < 65; i++){
+		if (sigaction(i, &act, NULL) < 0) {
+				perror("sigaction");
+				exit(EXIT_FAILURE);
+		}
     }
+
 
     while(1) {
         printf("En espera de Ctrl+C (PID = %d)\n", getpid());
