@@ -7,15 +7,11 @@
  * @date 20/3/2020
  *
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <unistd.h>
+#include "prottemp.h"
 
 static volatile sig_atomic_t got_signal_alrm = 0;
 static volatile sig_atomic_t got_signal_USR2 = 0;
+
 /***************************************************************
 Nombre: manejador_USR2.
 Descripcion:
@@ -38,7 +34,6 @@ Salida:
 ************************************************************/
 void manejador_SIGALRM(int sig) {
 	got_signal_alrm = 1;
-
 }
 
 /***************************************************************
@@ -58,7 +53,7 @@ int main(int argc, char **argv) {
 
 	int n_procesos, segundos;
 	pid_t *pids;
-	struct sigaction act_padre, act_hijos;
+	struct sigaction act_padre,act_padre_usr, act_hijos;
 
 	if(argc < 3){
 		printf("Introduce 2 argumentos\n");
@@ -70,13 +65,25 @@ int main(int argc, char **argv) {
 
 	pids = (pid_t*)malloc(sizeof(pid_t)*n_procesos);
 
+	/*Se arma manejador de USR2 que vienen de los hijos*/
+	act_padre_usr.sa_handler = manejador_USR2;
+	sigemptyset(&(act_padre_usr.sa_mask));
+	act_padre_usr.sa_flags = 0;
+	if (sigaction(SIGUSR2, &act_padre_usr, NULL) < 0) {
+		perror("sigaction");
+		exit(EXIT_FAILURE);
+	}
+
 	for (int i = 0; i < n_procesos; i++) {
 		pids[i] = fork();
 
 		if(pids[i] < 0){
 			perror("Fork:");
 			exit(EXIT_FAILURE);
+
 		}else if(pids[i] == 0){
+			long res;
+
 			act_hijos.sa_handler = manejador_SIGTERM;
 			sigemptyset(&(act_hijos.sa_mask));
 			act_hijos.sa_flags = 0;
@@ -85,11 +92,13 @@ int main(int argc, char **argv) {
 				perror("sigaction");
 				exit(EXIT_FAILURE);
 			}
-			/*Hacer operacion*/
+			res = sumar_numeros();
+			printf("Hijo %d, resultado=%ld\n", getpid(), res);
 
 			/*señal a padre*/
+			kill(getppid(), SIGUSR2);
+
 			while(1){
-				printf("Hijo esperando %d\n",getpid());
 				sleep(9999);
 			}
 
@@ -100,44 +109,37 @@ int main(int argc, char **argv) {
 	}
 
 	/*--- PADRE ---*/
+
+	/*Se arma manejador de alarma*/
 	act_padre.sa_handler = manejador_SIGALRM;
 	sigemptyset(&(act_padre.sa_mask));
 	act_padre.sa_flags = 0;
+	if (sigaction(SIGALRM, &act_padre, NULL) < 0) {
+		perror("sigaction");
+		exit(EXIT_FAILURE);
+	}
 
 	/*Se pone alarma*/
 	if (alarm(segundos)) {
 		fprintf(stderr, "Existe una alarma previa establecida\n");
 	}
 
-	/*Se arma manejador de alarma*/
-	if (sigaction(SIGALRM, &act_padre, NULL) < 0) {
-		perror("sigaction");
-		exit(EXIT_FAILURE);
-	}
-
-	/*Se arma manejador de SIGTERM para el padre
-	 para que no se mate a si mismo*/
-	if (sigaction(SIGTERM, &act_padre, NULL) < 0) {
-		perror("sigaction");
-		exit(EXIT_FAILURE);
-	}
-
 	while(1){
 		if(got_signal_alrm){
-			printf("Matabdo hijod\n");
-			for(int i = 0; i < n_procesos; i++){
-				kill(pids[i], SIGTERM);
+			if(senal_todos_hijos(n_procesos, pids, SIGTERM) == -1){
+				exit(EXIT_FAILURE);
 			}
-			//kill(0, SIGTERM);
+			//kill(0, SIGTERM); se mata a si mismo :(
 			break;
 		}
-		printf("Padre esperando\n");
 		sleep(9999);
 	}
 
-	printf("Finalizado padre\n");
+	printf("Finalizado padre, señales SIGUSR2 recibidas: %d\n",got_signal_USR2);
 
+	while(wait(NULL) > 0){}
 
+	exit(EXIT_SUCCESS);
 }
 
 

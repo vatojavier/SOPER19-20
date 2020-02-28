@@ -20,12 +20,15 @@ ejercicio_kill: ejercicio_kill.o
 ejercicio_kill.o: ejercicio_kill.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 	
-ejercicio_prottemp: ejercicio_prottemp.o
+ejercicio_prottemp: ejercicio_prottemp.o prottemp.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 ejercicio_prottemp.o: ejercicio_prottemp.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
+prottemp.o: prottemp.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+	
 clean:
 	rm -rf *.o $(EJEC)
 
