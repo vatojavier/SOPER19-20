@@ -44,4 +44,17 @@ Salida:
 ************************************************************/
 long sumar_numeros();
 
+/***************************************************************
+Nombre: armar_manejador.
+Descripcion:
+    Arma un manejador de una señal.
+Entrada:
+	struct sigaction act: La estructura.
+	int signal: señal a manejar.
+	void (*fun_ptr)(int): ptro a función manjadora.
+Salida:
+	-1 error o 0 ok.
+************************************************************/
+int armar_manejador(struct sigaction *act, int signal, void (*fun_ptr)(int));
+
 #endif /* PROTTEMP_H_ */

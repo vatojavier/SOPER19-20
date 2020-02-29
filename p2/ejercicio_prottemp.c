@@ -66,11 +66,7 @@ int main(int argc, char **argv) {
 	pids = (pid_t*)malloc(sizeof(pid_t)*n_procesos);
 
 	/*Se arma manejador de USR2 que vienen de los hijos*/
-	act_padre_usr.sa_handler = manejador_USR2;
-	sigemptyset(&(act_padre_usr.sa_mask));
-	act_padre_usr.sa_flags = 0;
-	if (sigaction(SIGUSR2, &act_padre_usr, NULL) < 0) {
-		perror("sigaction");
+	if(armar_manejador(&act_padre_usr, SIGUSR2, &manejador_USR2) == -1){
 		exit(EXIT_FAILURE);
 	}
 
@@ -84,14 +80,10 @@ int main(int argc, char **argv) {
 		}else if(pids[i] == 0){
 			long res;
 
-			act_hijos.sa_handler = manejador_SIGTERM;
-			sigemptyset(&(act_hijos.sa_mask));
-			act_hijos.sa_flags = 0;
-
-			if (sigaction(SIGTERM, &act_hijos, NULL) < 0) {
-				perror("sigaction");
+			if(armar_manejador(&act_hijos, SIGTERM, &manejador_SIGTERM) == -1){
 				exit(EXIT_FAILURE);
 			}
+
 			res = sumar_numeros();
 			printf("Hijo %d, resultado=%ld\n", getpid(), res);
 
@@ -105,17 +97,11 @@ int main(int argc, char **argv) {
 			/*No deberían llegar a este exit*/
 			exit(EXIT_SUCCESS);
 		}
-
 	}
 
 	/*--- PADRE ---*/
-
 	/*Se arma manejador de alarma*/
-	act_padre.sa_handler = manejador_SIGALRM;
-	sigemptyset(&(act_padre.sa_mask));
-	act_padre.sa_flags = 0;
-	if (sigaction(SIGALRM, &act_padre, NULL) < 0) {
-		perror("sigaction");
+	if(armar_manejador(&act_padre, SIGALRM, &manejador_SIGALRM) == -1){
 		exit(EXIT_FAILURE);
 	}
 
@@ -129,14 +115,12 @@ int main(int argc, char **argv) {
 			if(senal_todos_hijos(n_procesos, pids, SIGTERM) == -1){
 				exit(EXIT_FAILURE);
 			}
-			//kill(0, SIGTERM); se mata a si mismo :(
 			break;
 		}
 		sleep(9999);
 	}
 
 	printf("Finalizado padre, señales SIGUSR2 recibidas: %d\n",got_signal_USR2);
-
 	while(wait(NULL) > 0){}
 
 	exit(EXIT_SUCCESS);
