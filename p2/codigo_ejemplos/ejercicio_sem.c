@@ -44,6 +44,7 @@ int main(void) {
 
 	if (pid == 0) {
 		sem_wait(sem);
+		sem_unlink(SEM_NAME);/*movido aqui para el ej*/
 		printf("Zona protegida (hijo)\n");
 		sleep(5);
 		printf("Fin zona protegida (hijo)\n");
@@ -58,7 +59,7 @@ int main(void) {
 		printf("Fin zona protegida (padre)\n");
 		sem_post(sem);
 		sem_close(sem);
-		sem_unlink(SEM_NAME);
+
 
 		wait(NULL);
 		exit(EXIT_SUCCESS);

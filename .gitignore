@@ -1,2 +1,9 @@
 /.vscode
 /.project
+/.cproject
+/.idea
+/.settings
+CMakeLists.txt
+/cmake-build-debug
+/p2/.settings
+/p2/codigo_ejemplos/.vscode

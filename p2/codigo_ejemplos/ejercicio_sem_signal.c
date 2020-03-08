@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <errno.h>
 
 #define SEM_NAME "/example_sem"
 
@@ -16,6 +17,7 @@ void manejador(int sig) {
 int main(void) {
 	sem_t *sem = NULL;
     struct sigaction act;
+    int ret;
 
 	if ((sem = sem_open(SEM_NAME, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 0)) == SEM_FAILED) {
 		perror("sem_open");
@@ -33,7 +35,11 @@ int main(void) {
     }
 
 	printf("Entrando en espera (PID=%d)\n", getpid());
-	sem_wait(sem);
+
+    do{
+        ret = sem_wait(sem);
+    }while(errno == EINTR && ret == -1);
+
     printf("Fin de la espera\n");
 	sem_unlink(SEM_NAME);
 }
