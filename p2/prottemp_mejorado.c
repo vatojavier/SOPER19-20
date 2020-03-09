@@ -41,5 +41,16 @@ int armar_manejador(struct sigaction* act, int signal, void (*fun_ptr)(int)){
     }
 
     return 0;
+}
 
+int get_valor_semaforo(sem_t *sem, char* sem_name){
+    int sval;
+
+    if (sem_getvalue(sem, &sval) == -1) {
+        perror("sem_getvalue");
+        sem_unlink(sem_name);
+        exit(EXIT_FAILURE);
+    }
+
+    return sval;
 }

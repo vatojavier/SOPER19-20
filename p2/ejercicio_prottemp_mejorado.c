@@ -13,6 +13,10 @@
 static volatile sig_atomic_t got_signal_alrm = 0;
 static volatile sig_atomic_t got_signal_USR2 = 0;
 
+#define SEM_NAME_ESCR "/sem_escritores"
+#define SEM_NAME_LECT "/sem_lectores"
+#define SEM_NAME_CONT_LECT "/sem_cont_lectores"
+
 /***************************************************************
 Nombre: manejador_USR2.
 Descripcion:
@@ -56,6 +60,10 @@ int main(int argc, char **argv){
     int n_procesos, segundos;
     pid_t *pids;
     struct sigaction act_padre,act_padre_usr, act_hijos;
+    FILE *fp;
+    sem_t *sem_escritores = NULL;
+    sem_t *sem_lectores = NULL;
+    sem_t *sem_cont_lectores = NULL;
 
     if(argc < 3){
         printf("Introduce 2 argumentos\n");
@@ -69,6 +77,27 @@ int main(int argc, char **argv){
 
     /*Se arma manejador de USR2 que vienen de los hijos*/
     if(armar_manejador(&act_padre_usr, SIGUSR2, &manejador_USR2) == -1){
+        exit(EXIT_FAILURE);
+    }
+
+    /*Abrir fichero e inicializar fichero*/
+    fp = fopen("data.txt",  "w+");
+    fprintf(fp, "0\n0");
+    fclose(fp);
+
+    /*Crear e inicializar semáforos*/
+    if ((sem_escritores = sem_open(SEM_NAME_ESCR, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 1)) == SEM_FAILED) {
+        perror("sem_open escritores");
+        exit(EXIT_FAILURE);
+    }
+
+    if ((sem_lectores = sem_open(SEM_NAME_LECT, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 1)) == SEM_FAILED) {
+        perror("sem_open lectores");
+        exit(EXIT_FAILURE);
+    }
+
+    if ((sem_cont_lectores = sem_open(SEM_NAME_CONT_LECT, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 0)) == SEM_FAILED) {
+        perror("sem_open lectores");
         exit(EXIT_FAILURE);
     }
 
@@ -88,6 +117,27 @@ int main(int argc, char **argv){
 
             res = sumar_numeros();
             printf("Hijo %d, resultado=%ld\n", getpid(), res);
+
+
+            /*--- SEMAFOROS ---*/
+            sem_wait(sem_lectores);
+            sem_post(sem_cont_lectores);
+            if(get_valor_semaforo(sem_cont_lectores, SEM_NAME_CONT_LECT) == 1){
+                /*Si soy el primero evito que me escriban*/
+                sem_wait(sem_escritores);
+            }
+            sem_post(sem_lectores);
+
+            /*leer y escribir en fichero*/
+
+            sem_wait(sem_lectores);
+            sem_wait(sem_cont_lectores);
+            if(get_valor_semaforo(sem_cont_lectores, SEM_NAME_CONT_LECT) == 0){
+                /*Si soy el último ya pueden escribir*/
+                sem_post(sem_escritores);
+            }
+            sem_post(sem_lectores);
+            /*--- SEMAFOROS ---*/
 
             /*señal a padre*/
             kill(getppid(), SIGUSR2);
@@ -113,6 +163,8 @@ int main(int argc, char **argv){
     }
 
     while(1){
+        /*Si SIGNAL_USR2*/
+            /*comprobar fichero*/
         if(got_signal_alrm){
             if(senal_todos_hijos(n_procesos, pids, SIGTERM) == -1){
                 exit(EXIT_FAILURE);

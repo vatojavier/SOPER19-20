@@ -11,6 +11,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <semaphore.h>
+#include <fcntl.h>
 
 
 /***************************************************************
@@ -49,5 +51,18 @@ Salida:
 	-1 error o 0 ok.
 ************************************************************/
 int armar_manejador(struct sigaction *act, int signal, void (*fun_ptr)(int));
+
+
+/***************************************************************
+Nombre: valor_semaforo.
+Descripcion:
+    Devuelve el valor actual del semáforo
+Entrada:
+	sem_t *sem: semaforo en cuestion.
+    char *sem_name: nombre del semaforo.
+Salida:
+	-1 error, >= 0 valor del semaforo.
+************************************************************/
+int get_valor_semaforo(sem_t *sem, char* sem_name);
 
 #endif //SOPER19_20_PROTTEM_MEJORADO_H
