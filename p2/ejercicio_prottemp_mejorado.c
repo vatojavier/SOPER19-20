@@ -119,7 +119,7 @@ int main(int argc, char **argv){
             printf("Hijo %d, resultado=%ld\n", getpid(), res);
 
 
-            /*--- SEMAFOROS ---*/
+            /*--- SEMAFOROS --- TODO: comprobar que cuando llegan señales esperando semaforo se la come*/
             sem_wait(sem_lectores);
             sem_post(sem_cont_lectores);
             if(get_valor_semaforo(sem_cont_lectores, SEM_NAME_CONT_LECT) == 1){
