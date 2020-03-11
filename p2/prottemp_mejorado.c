@@ -54,3 +54,36 @@ int get_valor_semaforo(sem_t *sem, char* sem_name){
 
     return sval;
 }
+
+int leer_numeros(char* filename, int *proc_term, unsigned long *suma){
+
+    FILE *fp;
+    char *linea = NULL;
+    size_t len = 0;
+
+    /*leer del fichero*/
+    fp = fopen(filename, "r+");
+    if(fp == NULL){
+        perror("fopen:");
+        exit(EXIT_FAILURE);
+    }
+
+    /*Lee linea 1*/
+    if(getline(&linea, &len, fp) == -1){
+        perror("getline");
+        exit(EXIT_SUCCESS);
+    }
+    *proc_term = atoi(linea);
+
+    /*Lee linea 2*/
+    if(getline(&linea, &len, fp) == -1){
+        perror("getline");
+        exit(EXIT_SUCCESS);
+    }
+    *suma = (long) atoi(linea);
+
+    fclose(fp);
+
+    return  0;
+
+}

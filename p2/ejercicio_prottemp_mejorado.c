@@ -86,7 +86,7 @@ int main(int argc, char **argv){
 
     /*Abrir fichero e inicializar fichero*/
     fp = fopen(FILE_NAME,  "w+");
-    fprintf(fp, "0\n0");
+    fprintf(fp, "17\n8");
     fclose(fp);
 
     /*Crear e inicializar semáforos*/
@@ -114,9 +114,7 @@ int main(int argc, char **argv){
 
         }else if(pids[i] == 0){
             int proc_term;
-            long res, res_ant;
-            char *linea = NULL;
-            size_t len = 0;
+            unsigned long res, res_ant;
 
             if(armar_manejador(&act_hijos, SIGTERM, &manejador_SIGTERM) == -1){
                 exit(EXIT_FAILURE);
@@ -133,32 +131,9 @@ int main(int argc, char **argv){
                 sem_wait(sem_escritores);
             }
             sem_post(sem_lectores);
-            printf("PASADOS SEM\n");
 
-            /*leer del fichero*/
-            fp = fopen(FILE_NAME, "r+");
-            if(fp == NULL){
-                perror("fopen:");
-                exit(EXIT_FAILURE);
-            }
-
-            /*Lee linea 1*/
-            if(getline(&linea, &len, fp) == -1){
-                perror("getline");
-                exit(EXIT_SUCCESS);
-            }
-            proc_term = atoi(linea);
-            printf("Procesos terminados: %d\n", proc_term);
-
-            /*Lee linea 2*/
-            if(getline(&linea, &len, fp) == -1){
-                perror("getline");
-                exit(EXIT_SUCCESS);
-            }
-            res_ant = (long) atoi(linea);
-            printf("Suma: %ld\n", res_ant);
-
-            fclose(fp);
+            leer_numeros(FILE_NAME, &proc_term, &res_ant);
+            printf("Los numeros leidos son %d y %ld\n", proc_term, res_ant);
 
             sem_wait(sem_lectores);
             sem_wait(sem_cont_lectores);

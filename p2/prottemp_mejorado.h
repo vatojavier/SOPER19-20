@@ -65,4 +65,6 @@ Salida:
 ************************************************************/
 int get_valor_semaforo(sem_t *sem, char* sem_name);
 
+int leer_numeros(char* filename, int *proc_term, unsigned long *suma);
+
 #endif //SOPER19_20_PROTTEM_MEJORADO_H
