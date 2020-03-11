@@ -6,6 +6,7 @@
  * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
  * @date 9/4/2020
  *
+ * BORRA SEMAFOROS EN /dev/smh/<nombresem>
  */
 
 #include "prottemp_mejorado.h"
@@ -16,6 +17,7 @@ static volatile sig_atomic_t got_signal_USR2 = 0;
 #define SEM_NAME_ESCR "/sem_escritores"
 #define SEM_NAME_LECT "/sem_lectores"
 #define SEM_NAME_CONT_LECT "/sem_cont_lectores"
+#define FILE_NAME "data.txt"
 
 /***************************************************************
 Nombre: manejador_USR2.
@@ -58,12 +60,14 @@ void manejador_SIGALRM(int sig) {
 int main(int argc, char **argv){
 
     int n_procesos, segundos;
+    int usr2_ant = 0;
     pid_t *pids;
     struct sigaction act_padre,act_padre_usr, act_hijos;
     FILE *fp;
     sem_t *sem_escritores = NULL;
     sem_t *sem_lectores = NULL;
     sem_t *sem_cont_lectores = NULL;
+
 
     if(argc < 3){
         printf("Introduce 2 argumentos\n");
@@ -81,7 +85,7 @@ int main(int argc, char **argv){
     }
 
     /*Abrir fichero e inicializar fichero*/
-    fp = fopen("data.txt",  "w+");
+    fp = fopen(FILE_NAME,  "w+");
     fprintf(fp, "0\n0");
     fclose(fp);
 
@@ -109,7 +113,10 @@ int main(int argc, char **argv){
             exit(EXIT_FAILURE);
 
         }else if(pids[i] == 0){
-            long res;
+            int proc_term;
+            long res, res_ant;
+            char *linea = NULL;
+            size_t len = 0;
 
             if(armar_manejador(&act_hijos, SIGTERM, &manejador_SIGTERM) == -1){
                 exit(EXIT_FAILURE);
@@ -118,17 +125,40 @@ int main(int argc, char **argv){
             res = sumar_numeros();
             printf("Hijo %d, resultado=%ld\n", getpid(), res);
 
-
-            /*--- SEMAFOROS --- TODO: comprobar que cuando llegan señales esperando semaforo se la come*/
+            /*--- SEMAFOROS ---*/
             sem_wait(sem_lectores);
             sem_post(sem_cont_lectores);
             if(get_valor_semaforo(sem_cont_lectores, SEM_NAME_CONT_LECT) == 1){
-                /*Si soy el primero evito que me escriban*/
+                /*Si soy el primer lector evito que me escriban*/
                 sem_wait(sem_escritores);
             }
             sem_post(sem_lectores);
+            printf("PASADOS SEM\n");
 
-            /*leer y escribir en fichero*/
+            /*leer del fichero*/
+            fp = fopen(FILE_NAME, "r+");
+            if(fp == NULL){
+                perror("fopen:");
+                exit(EXIT_FAILURE);
+            }
+
+            /*Lee linea 1*/
+            if(getline(&linea, &len, fp) == -1){
+                perror("getline");
+                exit(EXIT_SUCCESS);
+            }
+            proc_term = atoi(linea);
+            printf("Procesos terminados: %d\n", proc_term);
+
+            /*Lee linea 2*/
+            if(getline(&linea, &len, fp) == -1){
+                perror("getline");
+                exit(EXIT_SUCCESS);
+            }
+            res_ant = (long) atoi(linea);
+            printf("Suma: %ld\n", res_ant);
+
+            fclose(fp);
 
             sem_wait(sem_lectores);
             sem_wait(sem_cont_lectores);
@@ -163,8 +193,15 @@ int main(int argc, char **argv){
     }
 
     while(1){
-        /*Si SIGNAL_USR2*/
+
+        if(usr2_ant != got_signal_USR2){
+            /*Si ha llegado nueva señal de usr2*/
+
+            /*--- SEMAFOROS ---TODO: comprobar que cuando llegan señales esperando semaforo se la come*/
             /*comprobar fichero*/
+            /*--- SEMAFOROS ---*/
+            usr2_ant = got_signal_USR2;
+        }
         if(got_signal_alrm){
             if(senal_todos_hijos(n_procesos, pids, SIGTERM) == -1){
                 exit(EXIT_FAILURE);
@@ -176,6 +213,15 @@ int main(int argc, char **argv){
 
     printf("Finalizado padre, señales SIGUSR2 recibidas: %d\n",got_signal_USR2);
     while(wait(NULL) > 0){}
+
+    sem_close(sem_cont_lectores);
+    sem_close(sem_lectores);
+    sem_close(sem_escritores);
+
+    sem_unlink(SEM_NAME_CONT_LECT);
+    sem_unlink(SEM_NAME_LECT);
+    sem_unlink(SEM_NAME_ESCR);
+
 
     exit(EXIT_SUCCESS);
 
