@@ -65,20 +65,20 @@ int leer_numeros(char* filename, int *proc_term, unsigned long *suma){
     fp = fopen(filename, "r+");
     if(fp == NULL){
         perror("fopen:");
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     /*Lee linea 1*/
     if(getline(&linea, &len, fp) == -1){
         perror("getline");
-        exit(EXIT_SUCCESS);
+        return -1;
     }
     *proc_term = atoi(linea);
 
     /*Lee linea 2*/
     if(getline(&linea, &len, fp) == -1){
         perror("getline");
-        exit(EXIT_SUCCESS);
+        return -1;
     }
     *suma = (long) atoi(linea);
 

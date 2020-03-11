@@ -86,7 +86,7 @@ int main(int argc, char **argv){
 
     /*Abrir fichero e inicializar fichero*/
     fp = fopen(FILE_NAME,  "w+");
-    fprintf(fp, "17\n8");
+    fprintf(fp, "0\n0");
     fclose(fp);
 
     /*Crear e inicializar semáforos*/
@@ -123,7 +123,7 @@ int main(int argc, char **argv){
             res = sumar_numeros();
             printf("Hijo %d, resultado=%ld\n", getpid(), res);
 
-            /*--- SEMAFOROS ---*/
+            /*--- SEMAFOROS leer ---*/
             sem_wait(sem_lectores);
             sem_post(sem_cont_lectores);
             if(get_valor_semaforo(sem_cont_lectores, SEM_NAME_CONT_LECT) == 1){
@@ -132,8 +132,13 @@ int main(int argc, char **argv){
             }
             sem_post(sem_lectores);
 
-            leer_numeros(FILE_NAME, &proc_term, &res_ant);
+            if(leer_numeros(FILE_NAME, &proc_term, &res_ant) == -1){
+                exit(EXIT_FAILURE);
+            }
             printf("Los numeros leidos son %d y %ld\n", proc_term, res_ant);
+
+            proc_term ++;
+            res_ant += res;
 
             sem_wait(sem_lectores);
             sem_wait(sem_cont_lectores);
@@ -142,7 +147,18 @@ int main(int argc, char **argv){
                 sem_post(sem_escritores);
             }
             sem_post(sem_lectores);
-            /*--- SEMAFOROS ---*/
+            /*--- FIN SEMAFOROS leer---*/
+
+            /*--- SEMAFOROS escribir---*/
+            sem_wait(sem_escritores);
+
+            fp = fopen(FILE_NAME, "w+");
+            fprintf(fp, "%d\n%ld", proc_term, res_ant);
+            fclose(fp);
+
+            sem_post(sem_escritores);
+            /*--- FIN SEMAFOROS escribir---*/
+
 
             /*señal a padre*/
             kill(getppid(), SIGUSR2);

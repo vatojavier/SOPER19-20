@@ -65,6 +65,18 @@ Salida:
 ************************************************************/
 int get_valor_semaforo(sem_t *sem, char* sem_name);
 
+
+/***************************************************************
+Nombre: leer_numeros.
+Descripcion:
+    Lee los dos numeros de data.txt, abre y cierra FILE
+Entrada:
+	char* filename: nombre del file
+    int *proc_term: procesos terminados (primera linea)
+    unsigned long *suma: suma de los procesos terminados (segunda linea)
+Salida:
+	-1 error, 0 OK.
+************************************************************/
 int leer_numeros(char* filename, int *proc_term, unsigned long *suma);
 
 #endif //SOPER19_20_PROTTEM_MEJORADO_H
