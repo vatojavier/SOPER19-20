@@ -60,7 +60,9 @@ void manejador_SIGALRM(int sig) {
 int main(int argc, char **argv){
 
     int n_procesos, segundos;
+    int proc_term; /*Procesos terminados*/
     int usr2_ant = 0;
+    unsigned long res, res_ant;
     pid_t *pids;
     struct sigaction act_padre,act_padre_usr, act_hijos;
     FILE *fp;
@@ -113,8 +115,6 @@ int main(int argc, char **argv){
             exit(EXIT_FAILURE);
 
         }else if(pids[i] == 0){
-            int proc_term;
-            unsigned long res, res_ant;
 
             if(armar_manejador(&act_hijos, SIGTERM, &manejador_SIGTERM) == -1){
                 exit(EXIT_FAILURE);
@@ -188,12 +188,33 @@ int main(int argc, char **argv){
         if(usr2_ant != got_signal_USR2){
             /*Si ha llegado nueva señal de usr2*/
 
-            /*--- SEMAFOROS ---TODO: comprobar que cuando llegan señales esperando semaforo se la come*/
+            /*--- SEMAFOROS leer---TODO: comprobar que cuando llegan señales esperando semaforo se la come*/
+            sem_wait(sem_lectores);
+            sem_post(sem_cont_lectores);
+            if(get_valor_semaforo(sem_cont_lectores, SEM_NAME_CONT_LECT) == 1){
+                sem_wait(sem_escritores);
+            }
+
+            sem_post(sem_lectores);
+
             /*comprobar fichero*/
+            if(leer_numeros(FILE_NAME, &proc_term, &res_ant) == -1){
+                exit(EXIT_FAILURE);
+            }
+
+            /*Si todos los hijos han termanado se les mata*/
+            if(proc_term == n_procesos){
+                if(senal_todos_hijos(n_procesos, pids, SIGTERM) == -1){
+                    exit(EXIT_FAILURE);
+                }
+                break;
+            }
+
             /*--- SEMAFOROS ---*/
             usr2_ant = got_signal_USR2;
         }
         if(got_signal_alrm){
+            //TODO: mirar si han finalizado todos los hijos
             if(senal_todos_hijos(n_procesos, pids, SIGTERM) == -1){
                 exit(EXIT_FAILURE);
             }

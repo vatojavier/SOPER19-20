@@ -15,8 +15,9 @@ int senal_todos_hijos(int n_hijos,pid_t *pids, int senial){
 }
 
 long sumar_numeros(){
+
     pid_t pid = getpid();
-    long res = 1;
+    long res = 0;
 
     for(int i = 0; i < (pid/10); i++){
         res = i + res;
@@ -60,6 +61,10 @@ int leer_numeros(char* filename, int *proc_term, unsigned long *suma){
     FILE *fp;
     char *linea = NULL;
     size_t len = 0;
+
+    if(filename == NULL){
+        return -1;
+    }
 
     /*leer del fichero*/
     fp = fopen(filename, "r+");

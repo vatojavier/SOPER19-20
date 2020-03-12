@@ -22,7 +22,7 @@ int senal_todos_hijos(int n_hijos,pid_t *pids, int senial){
 
 long sumar_numeros(){
 	pid_t pid = getpid();
-	long res = 1;
+	long res = 0;
 
 	for(int i = 0; i < (pid/10); i++){
 		res = i + res;
