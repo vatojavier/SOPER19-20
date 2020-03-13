@@ -61,6 +61,8 @@ int leer_numeros(char* filename, int *proc_term, unsigned long *suma){
     FILE *fp;
     char *linea = NULL;
     size_t len = 0;
+    char *ptr;
+    int ret;
 
     if(filename == NULL){
         return -1;
@@ -70,26 +72,26 @@ int leer_numeros(char* filename, int *proc_term, unsigned long *suma){
     fp = fopen(filename, "r+");
     if(fp == NULL){
         perror("fopen:");
-        /*return -1;*/
+        ret = -1;
     }
 
     /*Lee linea 1*/
     if(getline(&linea, &len, fp) == -1){
-        perror("getline");
-        /*return -1;*/
+        perror("getline1");
+        ret = -1;
     }
-    *proc_term = atoi(linea);
+    *proc_term = strtol(linea, &ptr, 10);
 
     /*Lee linea 2*/
     if(getline(&linea, &len, fp) == -1){
-        perror("getline");
-        /*return -1;*/
+        perror("getline2");
+        ret = -1;
     }
-    *suma = (long) atoi(linea);
+    *suma = (long) strtol(linea, &ptr, 10);
 
     fclose(fp);
     free(linea);
 
-    return  0;
+    return  ret;
 
 }

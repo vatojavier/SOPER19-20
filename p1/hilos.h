@@ -35,7 +35,7 @@ Descripcion:
 Entrada:
     char *argv: string para pasar a entero
 Salida:
-    int: > 0 si todo fue correcto, -1 en caso de error.
+    int: > 0 si fue correcto, -1 en caso de error.
 ************************************************************/
 int pasarAint(char *argv);
 
@@ -47,7 +47,7 @@ Entrada:
     Args* structArg: puntero a estructura
     int num: numero del hilo creado
 Salida:
-    int: > 0 si todo fue correcto, -1 en caso de error.
+    int: > 0 si fue correcto, -1 en caso de error.
 ************************************************************/
 int setParametros(Args* structArg, int num);
 
