@@ -13,6 +13,7 @@
 #include <sys/wait.h>
 #include <semaphore.h>
 #include <fcntl.h>
+#include <errno.h>
 
 
 /***************************************************************

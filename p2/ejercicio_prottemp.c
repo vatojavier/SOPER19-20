@@ -5,7 +5,6 @@
  *
  * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
  * @date 20/3/2020
- * TODO: comprobar sumatorio
  */
 #include "prottemp.h"
 

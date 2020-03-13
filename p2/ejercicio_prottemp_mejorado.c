@@ -59,7 +59,7 @@ void manejador_SIGALRM(int sig) {
 
 int main(int argc, char **argv){
 
-    int n_procesos, segundos;
+    int n_procesos, segundos, ret;
     int proc_term; /*Procesos terminados*/
     int usr2_ant = 0;
     unsigned long res, res_ant;
@@ -184,12 +184,14 @@ int main(int argc, char **argv){
     }
 
     while(1){
-
         if(usr2_ant != got_signal_USR2){
+            usr2_ant = got_signal_USR2;
             /*Si ha llegado nueva señal de usr2*/
 
             /*--- SEMAFOROS leer---TODO: comprobar que cuando llegan señales esperando semaforo se la come*/
-            sem_wait(sem_lectores);
+            do{
+                ret = sem_wait(sem_lectores);
+            }while(errno == EINTR && ret == -1);
             sem_post(sem_cont_lectores);
             if(get_valor_semaforo(sem_cont_lectores, SEM_NAME_CONT_LECT) == 1){
                 sem_wait(sem_escritores);
@@ -202,16 +204,24 @@ int main(int argc, char **argv){
                 exit(EXIT_FAILURE);
             }
 
-            /*Si todos los hijos han termanado se les mata*/
+            /*Si todos los hijos han terminado se les mata*/
             if(proc_term == n_procesos){
                 if(senal_todos_hijos(n_procesos, pids, SIGTERM) == -1){
                     exit(EXIT_FAILURE);
                 }
+                printf("Han acabado todos, resultado: %ld\n", res_ant);
                 break;
             }
 
-            /*--- SEMAFOROS ---*/
-            usr2_ant = got_signal_USR2;
+            do{
+                ret = sem_wait(sem_lectores);
+            }while(errno == EINTR && ret == -1);
+            sem_wait(sem_cont_lectores);
+            if(get_valor_semaforo(sem_cont_lectores, SEM_NAME_CONT_LECT) == 0){
+                sem_post(sem_escritores);
+            }
+            sem_post(sem_lectores);
+            /*--- FIN SEMAFOROS leer---*/
         }
         if(got_signal_alrm){
             //TODO: mirar si han finalizado todos los hijos
@@ -223,7 +233,7 @@ int main(int argc, char **argv){
         sleep(9999);
     }
 
-    printf("Finalizado padre, señales SIGUSR2 recibidas: %d\n",got_signal_USR2);
+    /*printf("Finalizado padre, señales SIGUSR2 recibidas: %d\n",got_signal_USR2);*/
     while(wait(NULL) > 0){}
 
     sem_close(sem_cont_lectores);
