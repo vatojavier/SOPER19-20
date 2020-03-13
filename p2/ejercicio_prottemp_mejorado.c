@@ -7,6 +7,8 @@
  * @date 9/4/2020
  *
  * BORRA SEMAFOROS EN /dev/smh/<nombresem>
+ * TODO: hijos siguen leyendo a la vez
+ * TODO: fugas de mem
  */
 
 #include "prottemp_mejorado.h"
@@ -18,6 +20,7 @@ static volatile sig_atomic_t got_signal_USR2 = 0;
 #define SEM_NAME_LECT "/sem_lectores"
 #define SEM_NAME_CONT_LECT "/sem_cont_lectores"
 #define FILE_NAME "data.txt"
+#define MAX_PROC 9999
 
 /***************************************************************
 Nombre: manejador_USR2.
@@ -63,7 +66,7 @@ int main(int argc, char **argv){
     int proc_term; /*Procesos terminados*/
     int usr2_ant = 0;
     unsigned long res, res_ant;
-    pid_t *pids;
+    pid_t pids[MAX_PROC];
     struct sigaction act_padre,act_padre_usr, act_hijos;
     FILE *fp;
     sem_t *sem_escritores = NULL;
@@ -79,14 +82,14 @@ int main(int argc, char **argv){
     n_procesos = atoi(argv[1]);
     segundos = atoi(argv[2]);
 
-    pids = (pid_t*)malloc(sizeof(pid_t)*n_procesos);
+    /*pids = (pid_t*)malloc(sizeof(pid_t)*n_procesos);*/
 
     /*Se arma manejador de USR2 que vienen de los hijos*/
     if(armar_manejador(&act_padre_usr, SIGUSR2, &manejador_USR2) == -1){
         exit(EXIT_FAILURE);
     }
 
-    /*Abrir fichero e inicializar fichero*/
+    /*Abrir e inicializar fichero*/
     fp = fopen(FILE_NAME,  "w+");
     fprintf(fp, "0\n0");
     fclose(fp);
@@ -103,7 +106,7 @@ int main(int argc, char **argv){
     }
 
     if ((sem_cont_lectores = sem_open(SEM_NAME_CONT_LECT, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 0)) == SEM_FAILED) {
-        perror("sem_open lectores");
+        perror("sem_open cont_lectores");
         exit(EXIT_FAILURE);
     }
 
@@ -123,34 +126,22 @@ int main(int argc, char **argv){
             res = sumar_numeros();
             printf("Hijo %d, resultado=%ld\n", getpid(), res);
 
-            /*--- SEMAFOROS leer ---*/
-            sem_wait(sem_lectores);
-            sem_post(sem_cont_lectores);
-            if(get_valor_semaforo(sem_cont_lectores, SEM_NAME_CONT_LECT) == 1){
-                /*Si soy el primer lector evito que me escriban*/
-                sem_wait(sem_escritores);
-            }
-            sem_post(sem_lectores);
+            /*--- SEMAFOROS escribir---*/
+            /*Tambien deben leer de 1 en 1!*/
+            do{
+                ret = sem_wait(sem_escritores);
+                if(ret == -1){
+                    perror("semaforo->");
+                }
+            }while(errno == EINTR && ret == -1);
 
             if(leer_numeros(FILE_NAME, &proc_term, &res_ant) == -1){
-                exit(EXIT_FAILURE);
+                printf("Mal leet numeros hijos\n");
+                /*exit(EXIT_FAILURE);*/
             }
-            printf("Los numeros leidos son %d y %ld\n", proc_term, res_ant);
-
+            printf("He leido %d terminados\n", proc_term);
             proc_term ++;
             res_ant += res;
-
-            sem_wait(sem_lectores);
-            sem_wait(sem_cont_lectores);
-            if(get_valor_semaforo(sem_cont_lectores, SEM_NAME_CONT_LECT) == 0){
-                /*Si soy el último ya pueden escribir*/
-                sem_post(sem_escritores);
-            }
-            sem_post(sem_lectores);
-            /*--- FIN SEMAFOROS leer---*/
-
-            /*--- SEMAFOROS escribir---*/
-            sem_wait(sem_escritores);
 
             fp = fopen(FILE_NAME, "w+");
             fprintf(fp, "%d\n%ld", proc_term, res_ant);
@@ -158,7 +149,6 @@ int main(int argc, char **argv){
 
             sem_post(sem_escritores);
             /*--- FIN SEMAFOROS escribir---*/
-
 
             /*señal a padre*/
             kill(getppid(), SIGUSR2);
@@ -185,10 +175,10 @@ int main(int argc, char **argv){
 
     while(1){
         if(usr2_ant != got_signal_USR2){
-            usr2_ant = got_signal_USR2;
             /*Si ha llegado nueva señal de usr2*/
+            usr2_ant = got_signal_USR2;
 
-            /*--- SEMAFOROS leer---TODO: comprobar que cuando llegan señales esperando semaforo se la come*/
+            /*--- SEMAFOROS leer---*/
             do{
                 ret = sem_wait(sem_lectores);
             }while(errno == EINTR && ret == -1);
@@ -223,8 +213,48 @@ int main(int argc, char **argv){
             sem_post(sem_lectores);
             /*--- FIN SEMAFOROS leer---*/
         }
+
         if(got_signal_alrm){
-            //TODO: mirar si han finalizado todos los hijos
+            //mirar si han finalizado todos los hijos
+
+            /*--- SEMAFOROS leer---*/
+            do{
+                ret = sem_wait(sem_lectores);
+            }while(errno == EINTR && ret == -1);
+            sem_post(sem_cont_lectores);
+            if(get_valor_semaforo(sem_cont_lectores, SEM_NAME_CONT_LECT) == 1){
+                sem_wait(sem_escritores);
+            }
+
+            sem_post(sem_lectores);
+
+            /*comprobar fichero*/
+            if(leer_numeros(FILE_NAME, &proc_term, &res_ant) == -1){
+                printf("Mal leer numeros padre\n");
+                /*exit(EXIT_FAILURE);*/
+            }
+
+            /*Si todos los hijos han terminado se les mata*/
+            if(proc_term == n_procesos){
+                if(senal_todos_hijos(n_procesos, pids, SIGTERM) == -1){
+                    exit(EXIT_FAILURE);
+                }
+                printf("ALARM: Han acabado todos, resultado: %ld\n", res_ant);
+                break;
+            }else{
+                printf("Falta trabajo\n");
+            }
+
+            do{
+                ret = sem_wait(sem_lectores);
+            }while(errno == EINTR && ret == -1);
+            sem_wait(sem_cont_lectores);
+            if(get_valor_semaforo(sem_cont_lectores, SEM_NAME_CONT_LECT) == 0){
+                sem_post(sem_escritores);
+            }
+            sem_post(sem_lectores);
+            /*--- FIN SEMAFOROS leer---*/
+
             if(senal_todos_hijos(n_procesos, pids, SIGTERM) == -1){
                 exit(EXIT_FAILURE);
             }
@@ -236,14 +266,14 @@ int main(int argc, char **argv){
     /*printf("Finalizado padre, señales SIGUSR2 recibidas: %d\n",got_signal_USR2);*/
     while(wait(NULL) > 0){}
 
-    sem_close(sem_cont_lectores);
-    sem_close(sem_lectores);
-    sem_close(sem_escritores);
-
+    printf("\nliberando\n");
     sem_unlink(SEM_NAME_CONT_LECT);
     sem_unlink(SEM_NAME_LECT);
     sem_unlink(SEM_NAME_ESCR);
 
+    sem_close(sem_cont_lectores);
+    sem_close(sem_lectores);
+    sem_close(sem_escritores);
 
     exit(EXIT_SUCCESS);
 

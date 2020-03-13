@@ -10,6 +10,7 @@ EJEC= ejercicio_kill ejercicio_prottemp ejercicio_prottemp_mejorado
 ########################################################
 COMPRIMIR = *.c *.h Makefile *.txt
 ########################################################
+#valgrind --leak-check=full prog
 
 all: $(EJEC)
 tests: $(TESTS)
