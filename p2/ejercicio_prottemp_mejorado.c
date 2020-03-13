@@ -43,7 +43,7 @@ Entrada:
 Salida:
 ************************************************************/
 void manejador_SIGTERM(int sig) {
-    printf("Finalizado %d\n", getpid());
+    /*printf("Finalizado %d\n", getpid());*/
     exit(EXIT_SUCCESS);
 }
 
@@ -127,7 +127,7 @@ int main(int argc, char **argv){
             }
 
             res = sumar_numeros();
-            printf("Hijo %d, resultado=%ld\n", getpid(), res);
+            /*printf("Hijo %d, resultado=%ld\n", getpid(), res);*/
 
             /*--- SEMAFOROS escribir---*/
             /*Tambien deben leer de 1 en 1!*/
@@ -138,7 +138,7 @@ int main(int argc, char **argv){
                 printf("Mal leet numeros hijos %d\n",proc_term );
                 /*exit(EXIT_FAILURE);*/
             }
-            printf("He leido %d terminados\n", proc_term);
+
             proc_term ++;
             res_ant += res;
 
@@ -215,46 +215,8 @@ int main(int argc, char **argv){
         }
 
         if(got_signal_alrm){
-            //mirar si han finalizado todos los hijos
 
-            /*--- SEMAFOROS leer---*/
-            while((ret = sem_wait(sem_lectores)) == -1 && errno == EINTR)
-                continue;
-            sem_post(sem_cont_lectores);
-            if(get_valor_semaforo(sem_cont_lectores, SEM_NAME_CONT_LECT) == 1){
-                while((ret = sem_wait(sem_escritores)) == -1 && errno == EINTR)
-                    continue;
-            }
-
-            sem_post(sem_lectores);
-
-            /*comprobar fichero*/
-            if(leer_numeros(FILE_NAME, &proc_term, &res_ant) == -1){
-                printf("\tMal leer numeros padre\n");
-                /*exit(EXIT_FAILURE);*/
-            }
-
-            /*Si todos los hijos han terminado se les mata*/
-            if(proc_term == n_procesos){
-                printf("\tMatando hijos\n");
-                if(senal_todos_hijos(n_procesos, pids, SIGTERM) == -1){
-                    exit(EXIT_FAILURE);
-                }
-                printf("ALARM: Han acabado todos, resultado: %ld\n", res_ant);
-                break;
-            }else{
-                printf("\tFalta trabajo\n");
-            }
-
-            while((ret = sem_wait(sem_lectores)) == -1 && errno == EINTR)
-                continue;
-            sem_wait(sem_cont_lectores);
-            if(get_valor_semaforo(sem_cont_lectores, SEM_NAME_CONT_LECT) == 0){
-                sem_post(sem_escritores);
-            }
-            sem_post(sem_lectores);
-            /*--- FIN SEMAFOROS leer---*/
-
+            printf("\tFalta trabajo\n");
             if(senal_todos_hijos(n_procesos, pids, SIGTERM) == -1){
                 exit(EXIT_FAILURE);
             }
