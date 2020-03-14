@@ -2,7 +2,7 @@
 CC=gcc
 CFLAGS= -g -Wall -pedantic -pthread
 LIBS = -lm
-EJEC= ejercicio_kill ejercicio_prottemp ejercicio_prottemp_mejorado
+EJEC= ejercicio_kill ejercicio_prottemp ejercicio_prottemp_mejorado ejercicio_lect_escr
 
 # $@: es lo que esta a la izq del ':'
 # $<: es el 1º item en la lista de dependencias
@@ -30,7 +30,6 @@ ejercicio_prottemp.o: ejercicio_prottemp.c
 prottemp.o: prottemp.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-
 ejercicio_prottemp_mejorado: ejercicio_prottemp_mejorado.o prottemp_mejorado.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
@@ -38,6 +37,12 @@ ejercicio_prottemp_mejorado.o: ejercicio_prottemp_mejorado.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 prottemp_mejorado.o: prottemp_mejorado.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+ejercicio_lect_escr: ejercicio_lect_escr.o prottemp_mejorado.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+ejercicio_lect_escr.o: ejercicio_lect_escr.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 	
 clean:

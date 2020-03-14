@@ -63,7 +63,7 @@ int main(int argc, char **argv){
         } else if (pids[i] == 0){
 
             while(1){
-                
+
                 /*--- HIJOS lectores ---*/
                 while(sem_wait(sem_lectores) == -1 && errno == EINTR)
                     continue;
