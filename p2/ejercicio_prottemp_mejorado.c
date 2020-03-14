@@ -1,5 +1,5 @@
 /**
- * @file ejercicio_prottemp_mejoradp.c
+ * @file ejercicio_prottemp_mejorado.c
  *
  * Ejercicio 12 en el que se crean procesos y se mandan señales entre ellos con concurrencia
  *
@@ -8,7 +8,6 @@
  *
  * BORRA SEMAFOROS EN /dev/smh/<nombresem>
  * NO HACERLO CON DO WHILE!
- * TODO: fugas de mem
  */
 
 #include "prottemp_mejorado.h"
@@ -43,7 +42,7 @@ Entrada:
 Salida:
 ************************************************************/
 void manejador_SIGTERM(int sig) {
-    /*printf("Finalizado %d\n", getpid());*/
+    printf("Finalizado %d\n", getpid());
     exit(EXIT_SUCCESS);
 }
 
@@ -72,7 +71,6 @@ int main(int argc, char **argv){
     sem_t *sem_escritores = NULL;
     sem_t *sem_lectores = NULL;
     sem_t *sem_cont_lectores = NULL;
-
 
     if(argc < 3){
         printf("Introduce 2 argumentos\n");
