@@ -1,6 +1,13 @@
-//
-// Created by javi on 9/3/20.
-//
+/**
+ * @file prottemp_mejorado.h
+ *
+ * Cabecera de funciones para Ejercicio 12 en el que se crean procesos
+ * y se mandan señales entre ellos con concurrencia
+ *
+ * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
+ * @date 9/4/2020
+ *
+ */
 
 #ifndef PROTTEM_MEJORADO_H
 #define PROTTEM_MEJORADO_H

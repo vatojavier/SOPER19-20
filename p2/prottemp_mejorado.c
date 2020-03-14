@@ -1,6 +1,15 @@
-//
-// Created by javi on 9/3/20.
-//
+/**
+ * @file prottemp_mejorado.c
+ *
+ * Implementación de funciones para Ejercicio 12 en el que se crean procesos
+ * y se mandan señales entre ellos con concurrencia
+ *
+ * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
+ * @date 9/4/2020
+ *
+ * BORRA SEMAFOROS EN /dev/smh/<nombresem>
+ * NO HACERLO CON DO WHILE!
+ */
 
 #include "prottemp_mejorado.h"
 

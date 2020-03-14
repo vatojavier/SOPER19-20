@@ -36,9 +36,8 @@ int main(void) {
 
 	printf("Entrando en espera (PID=%d)\n", getpid());
 
-    do{
-        ret = sem_wait(sem);
-    }while(errno == EINTR && ret == -1);
+    while(sem_wait(sem) == -1 && errno == EINTR)
+        continue;
 
     printf("Fin de la espera\n");
 	sem_unlink(SEM_NAME);
