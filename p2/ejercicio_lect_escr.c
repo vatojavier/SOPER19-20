@@ -13,8 +13,8 @@
 #define SEM_NAME_ESCR "/sem_escritores"
 #define SEM_NAME_LECT "/sem_lectores"
 #define SEM_NAME_CONT_LECT "/sem_cont_lectores"
-#define N_READ 4
-#define SECS 2
+#define N_READ 10
+#define SECS 0
 
 static volatile sig_atomic_t got_signal_INT = 0;
 static volatile sig_atomic_t got_signal_TERM = 0;
@@ -28,7 +28,6 @@ Entrada:
 Salida:
 ************************************************************/
 void manejador_SIGTERM(int sig) {
-    printf("manejando\n");
     got_signal_TERM ++;
 }
 
@@ -113,7 +112,6 @@ int main(int argc, char **argv){
 
                 sleep(SECS);
             }
-            printf("Cerrando hijos\n");
 
             sem_close(sem_cont_lectores);
             sem_close(sem_lectores);
@@ -144,7 +142,6 @@ int main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
 
-    printf("Cerrando padre\n");
 
     sem_unlink(SEM_NAME_CONT_LECT);
     sem_unlink(SEM_NAME_LECT);

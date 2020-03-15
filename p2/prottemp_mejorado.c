@@ -76,7 +76,7 @@ int leer_numeros(char* filename, int *proc_term, unsigned long *suma){
     if(filename == NULL || proc_term == NULL || suma == NULL){
         return -1;
     }
-    
+
 
     /*leer del fichero*/
     fp = fopen(filename, "r+");
