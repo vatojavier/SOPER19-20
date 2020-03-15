@@ -17,6 +17,20 @@
 #define SECS 2
 
 static volatile sig_atomic_t got_signal_INT = 0;
+static volatile sig_atomic_t got_signal_TERM = 0;
+
+/***************************************************************
+Nombre: manejador_SIGTERM.
+Descripcion:
+    manejador de la señal de SIGTERM que viene del padre
+Entrada:
+    int sig: señal
+Salida:
+************************************************************/
+void manejador_SIGTERM(int sig) {
+    printf("manejando\n");
+    got_signal_TERM ++;
+}
 
 /***************************************************************
 Nombre: manejador_SIGINT.
@@ -31,7 +45,7 @@ void manejador_SIGINT(int sig) {
 }
 
 int main(int argc, char **argv){
-    struct sigaction act_padre;
+    struct sigaction act_padre, act_hijo;
     pid_t pids[N_READ];
     sem_t *sem_escritores = NULL;
     sem_t *sem_lectores = NULL;
@@ -53,6 +67,18 @@ int main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
 
+    /*Manejador del padre*/
+    if(armar_manejador(&act_padre, SIGINT, &manejador_SIGINT) == -1){
+        printf("Error armando manejador\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /*Manejador del hijo*/
+    if(armar_manejador(&act_hijo, SIGTERM, &manejador_SIGTERM) == -1){
+        printf("Error armando manejador\n");
+        exit(EXIT_FAILURE);
+    }
+
     for(int i = 0; i < N_READ; i++){
 
         pids[i] = fork();
@@ -62,7 +88,7 @@ int main(int argc, char **argv){
             exit(EXIT_FAILURE);
         } else if (pids[i] == 0){
 
-            while(1){
+            while(!got_signal_TERM){
 
                 /*--- HIJOS lectores ---*/
                 while(sem_wait(sem_lectores) == -1 && errno == EINTR)
@@ -87,17 +113,18 @@ int main(int argc, char **argv){
 
                 sleep(SECS);
             }
+            printf("Cerrando hijos\n");
+
+            sem_close(sem_cont_lectores);
+            sem_close(sem_lectores);
+            sem_close(sem_escritores);
+
+            exit(EXIT_SUCCESS);
 
         }
-
     }
 
     /*--- PADRE escritor---*/
-    if(armar_manejador(&act_padre, SIGINT, &manejador_SIGINT) == -1){
-        printf("Error armando manejador\n");
-        exit(EXIT_FAILURE);
-    }
-
     while(!got_signal_INT){
 
         while(sem_wait(sem_escritores) == -1 && errno == EINTR)
@@ -110,12 +137,14 @@ int main(int argc, char **argv){
         sem_post(sem_escritores);
 
         sleep(SECS);
-
     }
 
     if(senal_todos_hijos(N_READ, pids, SIGTERM) == -1){
+        printf("concha\n");
         exit(EXIT_FAILURE);
     }
+
+    printf("Cerrando padre\n");
 
     sem_unlink(SEM_NAME_CONT_LECT);
     sem_unlink(SEM_NAME_LECT);
