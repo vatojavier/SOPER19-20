@@ -25,6 +25,10 @@ int main(int argc, char *argv[]) {
     signal = atoi(argv[1] + 1);
     proceso = atoi(argv[2]);
 
-    kill(proceso, signal);
+    if(kill(proceso, signal) == -1){
+        perror("kill");
+        exit(EXIT_FAILURE);
+    }
 
+    exit(EXIT_SUCCESS);
 }
