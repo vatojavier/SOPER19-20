@@ -14,7 +14,7 @@
 #define SEM_NAME_LECT "/sem_lectores"
 #define SEM_NAME_CONT_LECT "/sem_cont_lectores"
 #define N_READ 10
-#define SECS 0
+#define SECS 1
 
 static volatile sig_atomic_t got_signal_INT = 0;
 static volatile sig_atomic_t got_signal_TERM = 0;
