@@ -10,6 +10,7 @@
 
 static volatile sig_atomic_t got_signal_alrm = 0;
 static volatile sig_atomic_t got_signal_USR2 = 0;
+static volatile sig_atomic_t got_signal_TERM = 0;
 
 /***************************************************************
 Nombre: manejador_USR2.
@@ -44,8 +45,7 @@ Entrada:
 Salida:
 ************************************************************/
 void manejador_SIGTERM(int sig) {
-	printf("Finalizado %d\n", getpid());
-	exit(EXIT_SUCCESS);
+	got_signal_TERM++;
 }
 
 int main(int argc, char **argv) {
@@ -74,6 +74,7 @@ int main(int argc, char **argv) {
 
 		if(pids[i] < 0){
 			perror("Fork:");
+			free(pids);
 			exit(EXIT_FAILURE);
 
 		}else if(pids[i] == 0){
@@ -89,18 +90,20 @@ int main(int argc, char **argv) {
 			/*señal a padre*/
 			kill(getppid(), SIGUSR2);
 
-			while(1){
+			while(!got_signal_TERM){
 				sleep(9999);
 			}
 
-			/*No deberían llegar a este exit*/
-			exit(EXIT_SUCCESS);
+            printf("Finalizado %d\n", getpid());
+			free(pids);
+            exit(EXIT_SUCCESS);
 		}
 	}
 
 	/*--- PADRE ---*/
 	/*Se arma manejador de alarma*/
 	if(armar_manejador(&act_padre, SIGALRM, &manejador_SIGALRM) == -1){
+        free(pids);
 		exit(EXIT_FAILURE);
 	}
 
@@ -112,6 +115,7 @@ int main(int argc, char **argv) {
 	while(1){
 		if(got_signal_alrm){
 			if(senal_todos_hijos(n_procesos, pids, SIGTERM) == -1){
+                free(pids);
 				exit(EXIT_FAILURE);
 			}
 			break;
@@ -121,6 +125,8 @@ int main(int argc, char **argv) {
 
 	printf("Finalizado padre, señales SIGUSR2 recibidas: %d\n",got_signal_USR2);
 	while(wait(NULL) > 0){}
+
+    free(pids);
 
 	exit(EXIT_SUCCESS);
 }
