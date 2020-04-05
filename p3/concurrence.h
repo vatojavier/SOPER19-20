@@ -24,6 +24,8 @@
 #include <sys/mman.h>
 #include <string.h>
 #include <time.h>
+#include <sys/time.h>
+#include <math.h>
 
 /***************************************************************
 Nombre: armar_manejador.
