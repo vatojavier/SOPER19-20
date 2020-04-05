@@ -12,7 +12,7 @@
 #define INT_LIST_SIZE 10
 #define MSG_MAX 100
 #define MESSAGE "Hello world shared memory!"
-#define MAXBUF 10
+#define MAXBUF 17
 
 typedef struct{
     int integer_list[INT_LIST_SIZE];
