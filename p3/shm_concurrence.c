@@ -88,7 +88,9 @@ int main(int argc, char **argv){
     /*---FIN CREANDO MEMORIA ---*/
 
     /* Initialize the memory */
-    example_struct->logid = 0;
+    example_struct->logid = -1;
+    memcpy(example_struct->logtext, "nada", sizeof("nada"));
+    example_struct->processid = 0;
 
 
     for(int i = 0; i < N; i++){
@@ -100,11 +102,17 @@ int main(int argc, char **argv){
             exit(EXIT_FAILURE);
         }else if(pid == 0){
             printf("Hijo\n");
+
             exit(EXIT_SUCCESS);
         }
 
     }
 
+    while(!got_signal_USR1){ //Espera activa :(
+        sleep(999);
+    }
+
+    printf("%ld:%d:%s\n", example_struct->logid, example_struct->processid, example_struct->logtext);
 
     /* Free the shared memory */
     munmap(example_struct, sizeof(*example_struct));
