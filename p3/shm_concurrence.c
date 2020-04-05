@@ -71,7 +71,7 @@ int main(int argc, char **argv){
         return EXIT_FAILURE;
     }
 
-    /* Map the memory segment */
+    /* Map the memory segment HIJOS LO HEREDAN*/
     ClientInfo *example_struct = mmap(NULL,
                                             sizeof(*example_struct), /* Memory mapping size */
                                             PROT_READ | PROT_WRITE, /* Read and write */
@@ -92,6 +92,7 @@ int main(int argc, char **argv){
     memcpy(example_struct->logtext, "nada", sizeof("nada"));
     example_struct->processid = 0;
 
+    srand(time(0));
 
     for(int i = 0; i < N; i++){
 
@@ -101,18 +102,37 @@ int main(int argc, char **argv){
             perror("fork");
             exit(EXIT_FAILURE);
         }else if(pid == 0){
-            printf("Hijo\n");
+
+            for(int j = 0; j < M; j++){
+                int t = 100000 + (rand() % 910000);
+                printf("hijo durmiendo %d tiempo\n", t);
+                usleep(t);
+
+                example_struct->processid = getpid();
+                example_struct->logid ++;
+
+
+                kill(getppid(), SIGUSR1);
+            }
 
             exit(EXIT_SUCCESS);
         }
 
     }
 
-    while(!got_signal_USR1){ //Espera activa :(
+    /*Padre*/
+    while(1){ //Espera ma o meno activa :(
         sleep(999);
-    }
+        if(got_signal_USR1){
 
-    printf("%ld:%d:%s\n", example_struct->logid, example_struct->processid, example_struct->logtext);
+            printf("%ld:%d:%s\n", example_struct->logid, example_struct->processid, example_struct->logtext);
+
+            if(example_struct->logid == N*M -1){ //Si ha sido el ultimo se termina
+                break;
+            }
+
+        }
+    }
 
     /* Free the shared memory */
     munmap(example_struct, sizeof(*example_struct));
