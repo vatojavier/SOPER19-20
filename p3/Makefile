@@ -2,7 +2,7 @@
 CC=gcc
 CFLAGS= -g -Wall -pedantic -pthread -lrt
 LIBS = -lm
-EJEC= shm_concurrence
+EJEC= shm_concurrence shm_concurrence_solved
 
 # $@: es lo que esta a la izq del ':'
 # $<: es el 1º item en la lista de dependencias
@@ -19,6 +19,12 @@ shm_concurrence: shm_concurrence.o concurrence.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 shm_concurrence.o: shm_concurrence.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+shm_concurrence_solved: shm_concurrence_solved.o concurrence.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+shm_concurrence_solved.o: shm_concurrence_solved.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 concurrence.o: concurrence.c

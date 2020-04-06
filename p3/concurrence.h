@@ -1,7 +1,7 @@
 /**
  * @file concurrence.c
  *
- * Cabecera de funciones para Ejercicio 3. Memoria compartida con diferentes procesos malamente.
+ * Cabecera de funciones para Ejercicio 3. Memoria compartida con diferentes procesos.
  *
  * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
  * @author

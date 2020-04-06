@@ -1,7 +1,7 @@
 /**
  * @file concurrence.c
  *
- * Implementación de funciones para Ejercicio 3. Memoria compartida con diferentes procesos malamente.
+ * Implementación de funciones para Ejercicio 3. Memoria compartida con diferentes procesos.
  *
  * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
  * @author
