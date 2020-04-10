@@ -4,7 +4,7 @@
  * Implementación de funciones para Ejercicio 3. Memoria compartida con diferentes procesos.
  *
  * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
- * @author Aurora López Lázaro
+ * @author Aurora Pérez Lázaro aurora.perezl@estudiante.uam.es
  * @date 5/4/2020
  *
  */

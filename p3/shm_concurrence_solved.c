@@ -4,7 +4,7 @@
  * Ejercicio 3.c. Memoria compartida con diferentes procesos correcto.
  *
  * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
- * @author Aurora López Lázaro
+ * @author Aurora Pérez Lázaro aurora.perezl@estudiante.uam.es
  * @date 5/4/2020
  *
  */
