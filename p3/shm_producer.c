@@ -1,10 +1,10 @@
 /**
  * @file shm_producer.c
  *
- * Ejercicio 4. 
+ * Ejercicio 4. Productor
  *
  * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
- * @author Aurora Perez Lazaro aurora.perzl@estudiante.uam.es
+ * @author Aurora Perez Lazaro aurora.perezl@estudiante.uam.es
  * @date 7/4/2020
  *
  */
@@ -55,6 +55,7 @@ int main(int argc, char **argv){
 
     /*Mapeo de la memoria compartida*/
     q = (Queue *) mmap(NULL, sizeof(q), PROT_READ | PROT_WRITE, MAP_SHARED, fd_shm, 0);
+    close(fd_shm);
 	if(q == MAP_FAILED){
 		fprintf (stderr, "Error mapping the shared memory segment \n");
 		munmap(q, sizeof(q));
@@ -110,6 +111,7 @@ int main(int argc, char **argv){
 
 		/*Insertar en la cola*/
 		queue_add(q, num_aleat);
+		printf("Insertado %d\n", num_aleat);
 
 		sem_post(sem3);
 		sem_post(sem1);
@@ -120,9 +122,11 @@ int main(int argc, char **argv){
     queue_add(q, -1);
     sem_post(sem1);
 
+    queue_print(q);
+
     /*Borrar memoria*/
     munmap(q, sizeof(q));
-	shm_unlink(MEMNAME);
+    shm_unlink(MEMNAME);
 	sem_close(sem1);
 	sem_close(sem2);
 	sem_close(sem3);

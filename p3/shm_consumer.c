@@ -1,10 +1,10 @@
 /**
  * @file shm_consumer.c
  *
- * Ejercicio 4. 
+ * Ejercicio 4. Consumidor
  *
  * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
- * @author Aurora Perez Lazaro aurora.perzl@estudiante.uam.es
+ * @author Aurora Perez Lazaro aurora.perezl@estudiante.uam.es
  * @date 7/4/2020
  *
  */
