@@ -61,16 +61,16 @@ BOOL queue_is_empty(Queue *queue) {
 	return queue->count == 0;
 }
 
-STATUS queue_print(Queue *queue, FILE *fp) {
+STATUS queue_print(Queue *queue) {
 	if (!queue) return ERROR;
-	fprintf(fp, "Queue: < ");
+	printf( "Queue: < ");
 
 	if (queue_is_empty(queue) == FALSE) {
 		for (unsigned int i = queue->first; i != queue->last; i = (i + 1) % queue->size) {
-			fprintf(fp, "%i ", queue->array[i]);
+			printf("%i ", queue->array[i]);
 		}
-		fprintf(fp, "%i ", queue->array[queue->last]);
+		printf("%i ", queue->array[queue->last]);
 	}
-	fprintf(fp, ">");
+	printf(">\n");
 	return SUCCESS;
 }

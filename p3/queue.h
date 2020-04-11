@@ -29,6 +29,6 @@ BOOL queue_is_full(Queue *queue);
 
 BOOL queue_is_empty(Queue *queue);
 
-STATUS queue_print(Queue *queue, FILE *fp);
+STATUS queue_print(Queue *queue);
 
 #endif //QUEUE_H
