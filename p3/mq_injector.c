@@ -63,8 +63,8 @@ int main(int argc, char **argv){
     while(!feof(fp)){
         fread(buffer, sizeof(buffer) , 1, fp);
         printf("%s", buffer);
+        //Enviar mensaje a la cola
     }
-
 
 
     fclose(fp);
