@@ -18,5 +18,10 @@ int main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
 
+    if(argv[2][0] != '/'){
+        printf("La cola debe empezar por /\n");
+        exit(EXIT_SUCCESS);
+    }
+
     exit(EXIT_SUCCESS);
 }

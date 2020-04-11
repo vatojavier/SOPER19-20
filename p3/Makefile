@@ -2,7 +2,7 @@
 CC=gcc
 CFLAGS= -g -Wall -pedantic -pthread -lrt
 LIBS = -lm
-EJEC= shm_concurrence shm_concurrence_solved shm_consumer shm_producer
+EJEC= shm_concurrence shm_concurrence_solved shm_consumer shm_producer mq_injector mq_workers_pool
 
 # $@: es lo que esta a la izq del ':'
 # $<: es el 1º item en la lista de dependencias
@@ -43,6 +43,21 @@ shm_consumer.o: shm_consumer.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 queue.o:queue.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+mq_injector: mq_injector.o pool_trabajadores.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+mq_injector.o: mq_injector.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+mq_workers_pool: mq_workers_pool.o pool_trabajadores.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+mq_workers_pool.o: mq_workers_pool.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+pool_trabajadores.o: pool_trabajadores.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 clean:
