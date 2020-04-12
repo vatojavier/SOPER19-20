@@ -22,7 +22,6 @@ int main(int argc, char **argv){
 
     FILE *fp;
     char buffer[MAX_LONG];
-    size_t leidos;
 
     struct mq_attr attributes = {
             .mq_flags = 0,
@@ -59,14 +58,25 @@ int main(int argc, char **argv){
         return EXIT_FAILURE;
     }
 
-    //Mensaje msg;
+    Mensaje msg;
     while(!feof(fp)){
-        fread(buffer, sizeof(buffer) , 1, fp);
+        fread(buffer, sizeof(buffer) , 1, fp); //Enviando buffer de 2kB
         printf("%s", buffer);
+
         //Enviar mensaje a la cola
+        strcpy(msg.trozo, buffer);
+        int ret = mq_send(queue, (char*)&msg, sizeof(msg), 1);
+        if(ret == -1){
+            perror("mq_send");
+            fclose(fp);
+            mq_close(queue);
+            mq_unlink(argv[2]);
+        }
+
     }
 
-
+    mq_close(queue);
+    mq_unlink(argv[2]);
     fclose(fp);
     exit(EXIT_SUCCESS);
 }
