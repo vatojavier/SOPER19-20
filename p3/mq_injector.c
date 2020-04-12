@@ -72,7 +72,6 @@ int main(int argc, char **argv){
             mq_close(queue);
             mq_unlink(argv[2]);
         }
-
     }
 
     mq_close(queue);

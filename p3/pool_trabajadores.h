@@ -36,9 +36,36 @@ Descripcion:
 Entrada:
 	char *cadena: la cadena en la que se cuenta.
     char caracter: el caracter a contar
+    int *final: 1 si la cadena contiene EOF
 Salida:
 	-1 error o >= 0 num de caracteres contados en cadena
 ************************************************************/
-int contar_caracter(char *cadena, char caracter);
+int contar_caracter(char *cadena, char caracter, int *final);
+
+/***************************************************************
+Nombre: armar_manejador.
+Descripcion:
+    Arma un manejador de una señal.
+Entrada:
+	struct sigaction act: La estructura.
+	int signal: señal a manejar.
+	void (*fun_ptr)(int): ptro a función manjadora.
+Salida:
+	-1 error o 0 ok.
+************************************************************/
+int armar_manejador(struct sigaction *act, int signal, void (*fun_ptr)(int));
+
+/***************************************************************
+Nombre: senal_todos_hijos.
+Descripcion:
+    Manda señan a todos los hijos
+Entrada:
+    int n_hijos:Cuantos hijos tiene el padre
+    pid_t *pids: Array con los pids de los hijos
+    int senial: Señal a mandar
+Salida:
+	-1 error o 0 ok.
+************************************************************/
+int senal_todos_hijos(int n_hijos, pid_t *pids, int senial);
 
 #endif //POOL_TRABAJADORES_H
