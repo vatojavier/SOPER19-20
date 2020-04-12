@@ -10,16 +10,21 @@
  */
 #ifndef QUEUE_H
 #define QUEUE_H
-
-#include "types.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include "types.h"
 
+#define MAX_ELEM 100
 
-typedef struct _Queue Queue;
+typedef struct _Queue {
+  int elementos[MAX_ELEM];
+  int front;
+  int rear;
+}Queue;
 
-Queue *queue_create(unsigned int size);
+void queue_create(Queue *queue);
 
-STATUS queue_destroy(Queue *queue);
+void queue_destroy(Queue *queue);
 
 STATUS queue_add(Queue *queue, int new);
 
@@ -28,6 +33,8 @@ int queue_get(Queue *queue);
 BOOL queue_is_full(Queue *queue);
 
 BOOL queue_is_empty(Queue *queue);
+
+int queue_size(const Queue *queue);
 
 STATUS queue_print(Queue *queue);
 

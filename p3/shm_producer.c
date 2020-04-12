@@ -27,11 +27,11 @@
 #define SEMAFORO1 "/sem1"
 #define SEMAFORO2 "/sem2"
 #define SEMAFORO3 "/sem3"
-#define MEMNAME "/shared_4"
+#define MEMNAME "/shared_e4"
 
 int main(int argc, char **argv){
-	int fd_shm = 0;
-	Queue *q = NULL;
+	int fd_shm = 0, error = 0;
+	Queue *q;
 	sem_t *sem1 = NULL, *sem2 = NULL, *sem3 = NULL;
 
 	int n = atoi(argv[1]);
@@ -53,24 +53,30 @@ int main(int argc, char **argv){
         printf ("Shared memory segment created\n");
     }
 
-    /*Mapeo de la memoria compartida*/
-    q = (Queue *) mmap(NULL, sizeof(q), PROT_READ | PROT_WRITE, MAP_SHARED, fd_shm, 0);
-    close(fd_shm);
-	if(q == MAP_FAILED){
-		fprintf (stderr, "Error mapping the shared memory segment \n");
-		munmap(q, sizeof(q));
+    error = ftruncate(fd_shm, sizeof(Queue));
+	if(error == -1){
+		fprintf (stderr, "Error resizing the shared memory segment \n");
 		shm_unlink(MEMNAME);
 		exit(EXIT_FAILURE);
 	}
 
-	/*Inicializamos la cola*/
-	q = queue_create(n);
+    /*Mapeo de la memoria compartida*/
+    q = (Queue *) mmap(NULL, sizeof(*q), PROT_READ | PROT_WRITE, MAP_SHARED, fd_shm, 0);
+	if(q == MAP_FAILED){
+		fprintf (stderr, "Error mapping the shared memory segment \n");
+		munmap(q, sizeof(*q));
+		shm_unlink(MEMNAME);
+		exit(EXIT_FAILURE);
+	}
+
+    /*Inicializamos la cola*/
+	queue_create(q);
 
 	/*Creamos semáforos*/
 	/*Ira incrementando hasta llegar al estado lleno*/
 	if ((sem1 = sem_open(SEMAFORO1, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 0)) == SEM_FAILED) {
 		perror("sem_open");
-		munmap(q, sizeof(q));
+		munmap(q, sizeof(*q));
 		shm_unlink(MEMNAME);
 		exit(EXIT_FAILURE);
 	}
@@ -79,7 +85,7 @@ int main(int argc, char **argv){
 	/*Ira decrementando hasta llegar al estado vacio*/
 	if((sem2 = sem_open(SEMAFORO2, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, n)) == SEM_FAILED){
 		perror("sem_open");
-		munmap(q, sizeof(q));
+		munmap(q, sizeof(*q));
 		shm_unlink(MEMNAME);
 		sem_close(sem1);
 		exit(EXIT_FAILURE);
@@ -89,7 +95,7 @@ int main(int argc, char **argv){
 	/*Se encarga de controlar la zona de insertar elementos en la cola*/
 	if((sem3 = sem_open(SEMAFORO3, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 1)) == SEM_FAILED){
 		perror("sem_open");
-		munmap(q, sizeof(q));
+		munmap(q, sizeof(*q));
 		shm_unlink(MEMNAME);
 		sem_close(sem1);
 		sem_close(sem2);
@@ -125,11 +131,11 @@ int main(int argc, char **argv){
     queue_print(q);
 
     /*Borrar memoria*/
-    munmap(q, sizeof(q));
-    shm_unlink(MEMNAME);
-	sem_close(sem1);
-	sem_close(sem2);
-	sem_close(sem3);
+    munmap(q, sizeof(*q));
+    //shm_unlink(MEMNAME);
+	//sem_close(sem1);
+	//sem_close(sem2);
+	//sem_close(sem3);
 	
 	exit(EXIT_SUCCESS);
 
