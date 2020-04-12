@@ -22,7 +22,7 @@ typedef struct _Queue {
   int rear;
 }Queue;
 
-void queue_create(Queue *queue);
+Queue* queue_create();
 
 void queue_destroy(Queue *queue);
 

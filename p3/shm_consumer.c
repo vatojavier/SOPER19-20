@@ -27,11 +27,18 @@
 #define SEMAFORO1 "/sem1"
 #define SEMAFORO2 "/sem2"
 #define SEMAFORO3 "/sem3"
-#define MEMNAME "/shared_e4"
+#define MEMNAME "/ejerc4_s"
 
+typedef struct _Sem {
+    sem_t sem1;
+    sem_t sem2;
+    sem_t sem3;
+    Queue *q;
+    int size;
+} Sem;
 
 int main(int argc, char **argv){
-	Queue *q;
+	Sem *sem;
 	int fd_shm = 0;
 	sem_t *sem1 = NULL, *sem2 = NULL, *sem3 = NULL;
 
@@ -46,52 +53,24 @@ int main(int argc, char **argv){
     }
 
     /*Mapeo de la memoria compartida*/
-    q = mmap(NULL, sizeof(*q), PROT_READ | PROT_WRITE, MAP_SHARED, fd_shm, 0);
-	if(q == MAP_FAILED){
+    sem = mmap(NULL, sizeof(Sem), PROT_READ | PROT_WRITE, MAP_SHARED, fd_shm, 0);
+	if(sem == MAP_FAILED){
 		fprintf (stderr, "Error mapping the shared memory segment \n");
-		munmap(q, sizeof(*q));
+		munmap(sem, sizeof(*sem));
 		shm_unlink(MEMNAME);
 		exit(EXIT_FAILURE);
 	}
-	/*Abrir los diferentes semaforos*/
-	if((sem1 = sem_open(SEMAFORO1, 0)) == SEM_FAILED){
-		perror("sem_open");
-		munmap(q, sizeof(*q));
-		shm_unlink(MEMNAME);
-		exit(EXIT_FAILURE);
-	}
-	sem_unlink(SEMAFORO1);
-
-	if((sem2 = sem_open(SEMAFORO2, 0)) == SEM_FAILED){
-		perror("sem_open");
-		munmap(q, sizeof(*q));
-		shm_unlink(MEMNAME);
-		sem_close(sem1);
-		exit(EXIT_FAILURE);
-	}
-	sem_unlink(SEMAFORO2);
-	
-	if((sem3 = sem_open(SEMAFORO3, 0)) == SEM_FAILED){
-		perror("sem_open");
-		munmap(q, sizeof(*q));
-		shm_unlink(MEMNAME);
-		sem_close(sem1);
-		sem_close(sem2);
-		exit(EXIT_FAILURE);
-	}
-	sem_unlink(SEMAFORO3);
 
 	/*Leer de la cola hasta encontrar -1*/
-	while(1){
-		sem_wait(sem1);
-		sem_wait(sem3);
-		elem = queue_get(q);
-		sem_post(sem3);
-		sem_post(sem2);
-		
-		if(elem == -1){
-			break;	
-		}
+	while(1)
+	{
+		sem_wait(&sem->sem1);
+		sem_wait(&sem->sem3);
+		elem = queue_get(sem->q);
+		sem_post(&sem->sem3);
+		sem_post(&sem->sem2);
+		if(elem == -1)
+			break;
 		leidos[elem]++;
 	}
 
@@ -103,12 +82,12 @@ int main(int argc, char **argv){
 
 
 	/*Borrar memoria*/
-    munmap(q, sizeof(*q));
+    munmap(sem, sizeof(*sem));
 	shm_unlink(MEMNAME);
 	sem_close(sem1);
 	sem_close(sem2);
 	sem_close(sem3);
-	queue_destroy(q);
+	queue_destroy(sem->q);
 
 	exit(EXIT_SUCCESS);
 

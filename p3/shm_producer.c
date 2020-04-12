@@ -27,12 +27,22 @@
 #define SEMAFORO1 "/sem1"
 #define SEMAFORO2 "/sem2"
 #define SEMAFORO3 "/sem3"
-#define MEMNAME "/shared_e4"
+#define MEMNAME "/ejerc4_sha"
+
+
+typedef struct _Sem {
+    sem_t sem1;
+    sem_t sem2;
+    sem_t sem3;
+    Queue *q;
+    int size;
+} Sem;
+
 
 int main(int argc, char **argv){
 	int fd_shm = 0, error = 0;
-	Queue *q;
-	sem_t *sem1 = NULL, *sem2 = NULL, *sem3 = NULL;
+	Sem *sem;
+	//sem_t *sem1 = NULL, *sem2 = NULL, *sem3 = NULL;
 
 	int n = atoi(argv[1]);
 	int aleat = atoi(argv[2]);
@@ -53,7 +63,7 @@ int main(int argc, char **argv){
         printf ("Shared memory segment created\n");
     }
 
-    error = ftruncate(fd_shm, sizeof(Queue));
+    error = ftruncate(fd_shm, sizeof(Sem));
 	if(error == -1){
 		fprintf (stderr, "Error resizing the shared memory segment \n");
 		shm_unlink(MEMNAME);
@@ -61,28 +71,59 @@ int main(int argc, char **argv){
 	}
 
     /*Mapeo de la memoria compartida*/
-    q = (Queue *) mmap(NULL, sizeof(*q), PROT_READ | PROT_WRITE, MAP_SHARED, fd_shm, 0);
-	if(q == MAP_FAILED){
+    sem = (Sem *) mmap(NULL, sizeof(Sem), PROT_READ | PROT_WRITE, MAP_SHARED, fd_shm, 0);
+    close(fd_shm);
+	if(sem == MAP_FAILED){
 		fprintf (stderr, "Error mapping the shared memory segment \n");
-		munmap(q, sizeof(*q));
+		munmap(sem, sizeof(*sem));
 		shm_unlink(MEMNAME);
 		exit(EXIT_FAILURE);
 	}
 
     /*Inicializamos la cola*/
-	queue_create(q);
+	sem->q = queue_create();
+	sem->size = n;
 
 	/*Creamos semáforos*/
 	/*Ira incrementando hasta llegar al estado lleno*/
+	if (sem_init(&sem->sem1, 1, 0) < 0) {
+        perror("sem_init");
+        munmap(sem, sizeof(*sem));
+		shm_unlink(MEMNAME);
+		exit(EXIT_FAILURE);
+    }
+	sem_unlink(SEMAFORO1);
+
+	/*Ira decrementando hasta llegar al estado vacio*/
+    if (sem_init(&sem->sem2, 1, MAX_ELEM) < 0) {
+        perror("sem_init");
+        sem_destroy(&sem->sem1);
+        munmap(sem, sizeof(*sem));
+		shm_unlink(MEMNAME);
+		exit(EXIT_FAILURE);
+    }
+	sem_unlink(SEMAFORO2);
+
+	/*Se encarga de controlar la zona de insertar elementos en la cola*/
+    if (sem_init(&sem->sem3, 1, 1) < 0) {
+        perror("sem_init");
+        sem_destroy(&sem->sem1);
+        sem_destroy(&sem->sem2);
+        munmap(sem, sizeof(*sem));
+		shm_unlink(MEMNAME);
+		exit(EXIT_FAILURE);
+    }
+	sem_unlink(SEMAFORO3);
+
+
+/*
 	if ((sem1 = sem_open(SEMAFORO1, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 0)) == SEM_FAILED) {
 		perror("sem_open");
 		munmap(q, sizeof(*q));
 		shm_unlink(MEMNAME);
 		exit(EXIT_FAILURE);
 	}
-	sem_unlink(SEMAFORO1);
 	
-	/*Ira decrementando hasta llegar al estado vacio*/
 	if((sem2 = sem_open(SEMAFORO2, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, n)) == SEM_FAILED){
 		perror("sem_open");
 		munmap(q, sizeof(*q));
@@ -90,9 +131,7 @@ int main(int argc, char **argv){
 		sem_close(sem1);
 		exit(EXIT_FAILURE);
 	}
-	sem_unlink(SEMAFORO2);
 	
-	/*Se encarga de controlar la zona de insertar elementos en la cola*/
 	if((sem3 = sem_open(SEMAFORO3, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 1)) == SEM_FAILED){
 		perror("sem_open");
 		munmap(q, sizeof(*q));
@@ -101,8 +140,7 @@ int main(int argc, char **argv){
 		sem_close(sem2);
 		exit(EXIT_FAILURE);
 	}
-	sem_unlink(SEMAFORO3);
-
+*/
 
     /*generar N numeros aleatorios e inyectar en cola*/
     for (int i = 0; i < n; ++i){
@@ -112,26 +150,33 @@ int main(int argc, char **argv){
     		num_aleat = i % 10;
     	}
 
-    	sem_wait(sem2);
-		sem_wait(sem3);
+    	sem_wait(&sem->sem2);
+		sem_wait(&sem->sem3);
 
 		/*Insertar en la cola*/
-		queue_add(q, num_aleat);
+		error = queue_add(sem->q, num_aleat);
+		if(error == ERROR){
+			munmap(sem, sizeof(*sem));
+    		shm_unlink(MEMNAME);
+    		exit(EXIT_FAILURE);
+		}
 		printf("Insertado %d\n", num_aleat);
 
-		sem_post(sem3);
-		sem_post(sem1);
+		sem_post(&sem->sem3);
+		sem_post(&sem->sem1);
 
     }
-
+    sem_wait(&sem->sem2);
+	sem_wait(&sem->sem3);
     /*Insertar -1 al final de la cola*/
-    queue_add(q, -1);
-    sem_post(sem1);
+    queue_add(sem->q, -1);
+    sem_post(&sem->sem3);
+	sem_post(&sem->sem1);
 
-    queue_print(q);
+    queue_print(sem->q);
 
     /*Borrar memoria*/
-    munmap(q, sizeof(*q));
+    munmap(sem, sizeof(*sem));
     //shm_unlink(MEMNAME);
 	//sem_close(sem1);
 	//sem_close(sem2);
