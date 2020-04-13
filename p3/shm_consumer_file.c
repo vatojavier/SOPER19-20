@@ -27,15 +27,8 @@
 #define SEMAFORO1 "/sem1"
 #define SEMAFORO2 "/sem2"
 #define SEMAFORO3 "/sem3"
-#define FNAME "file4.txt"
+#define FNAME "file4b.txt"
 
-typedef struct _Sem {
-    sem_t sem1;
-    sem_t sem2;
-    sem_t sem3;
-    Queue *q;
-    int size;
-} Sem;
 
 int main(int argc, char **argv){
 	Sem *sem;
@@ -43,6 +36,12 @@ int main(int argc, char **argv){
 	int elem = 0;
 	int leidos[10]; /*Array que almacenará el numero de veces que sale cada numero*/
 
+
+	for (int i = 0; i < 10; ++i)
+	{
+		leidos[i] = 0;
+	}
+	
 	/*Abrir fichero*/
     pf = open(FNAME, O_RDWR, 0);
     if (pf == -1) {
@@ -59,16 +58,22 @@ int main(int argc, char **argv){
 		exit(EXIT_FAILURE);
 	}
 
-	/*Leer de la cola hasta encontrar -1*/
-	while(1)
+	/*Imprimimos la cola*/
+    printf("Queue < ");
+	for(int i = 0; i < sem->size; i++){
+		printf("%d ", sem->q.elementos[i]);
+	}
+	printf(">\n");
+  	
+	for (int i = 0; i < sem->size; ++i)
 	{
 		sem_wait(&sem->sem1);
 		sem_wait(&sem->sem3);
-		elem = queue_get(sem->q);
+		elem = sem->q.elementos[sem->q.front];
+		sem->q.elementos[sem->q.front] = 0;
+        sem->q.front = (sem->q.front + 1) % MAX_ELEM;
 		sem_post(&sem->sem3);
 		sem_post(&sem->sem2);
-		if(elem == -1)
-			break;
 		leidos[elem]++;
 	}
 
@@ -80,7 +85,6 @@ int main(int argc, char **argv){
 
 
 	/*Borrar memoria*/
-	queue_destroy(sem->q);
     munmap(sem, sizeof(*sem));
 	shm_unlink(FNAME);
 

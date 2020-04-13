@@ -38,7 +38,8 @@ STATUS queue_add(Queue *queue, int new) {
 }
 
 int queue_get(Queue *queue) {
-	if (!queue || queue_is_empty(queue)) return ERROR_INT;
+	if (!queue || queue_is_empty(queue))
+		return ERROR_INT;
 	int ret_item = queue->elementos[queue->front];
 	queue->elementos[queue->front] = 0;
 	queue->front = (queue->front + 1) % MAX_ELEM;

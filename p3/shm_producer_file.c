@@ -27,22 +27,12 @@
 #define SEMAFORO1 "/sem1"
 #define SEMAFORO2 "/sem2"
 #define SEMAFORO3 "/sem3"
-#define FNAME "file4.txt"
-
-
-typedef struct _Sem {
-    sem_t sem1;
-    sem_t sem2;
-    sem_t sem3;
-    Queue *q;
-    int size;
-} Sem;
+#define FNAME "file4b.txt"
 
 
 int main(int argc, char **argv){
 	int pf = 0, error = 0;
 	Sem *sem;
-	//sem_t *sem1 = NULL, *sem2 = NULL, *sem3 = NULL;
 
 	int n = atoi(argv[1]);
 	int aleat = atoi(argv[2]);
@@ -79,7 +69,13 @@ int main(int argc, char **argv){
 	}
 
     /*Inicializamos la cola*/
-	sem->q = queue_create();
+	sem->q.front = 0;
+	sem->q.rear = -1;
+	for (int i = 0; i < MAX_ELEM; ++i)
+	{
+		sem->q.elementos[i] = 0;
+	}
+
 	sem->size = n;
 
 	/*Creamos semáforos*/
@@ -113,33 +109,6 @@ int main(int argc, char **argv){
     }
 	sem_unlink(SEMAFORO3);
 
-
-/*
-	if ((sem1 = sem_open(SEMAFORO1, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 0)) == SEM_FAILED) {
-		perror("sem_open");
-		munmap(q, sizeof(*q));
-		shm_unlink(FNAME);
-		exit(EXIT_FAILURE);
-	}
-	
-	if((sem2 = sem_open(SEMAFORO2, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, n)) == SEM_FAILED){
-		perror("sem_open");
-		munmap(q, sizeof(*q));
-		shm_unlink(FNAME);
-		sem_close(sem1);
-		exit(EXIT_FAILURE);
-	}
-	
-	if((sem3 = sem_open(SEMAFORO3, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 1)) == SEM_FAILED){
-		perror("sem_open");
-		munmap(q, sizeof(*q));
-		shm_unlink(FNAME);
-		sem_close(sem1);
-		sem_close(sem2);
-		exit(EXIT_FAILURE);
-	}
-*/
-
     /*generar N numeros aleatorios e inyectar en cola*/
     for (int i = 0; i < n; ++i){
     	if(aleat == 0){ /*Numeros aleatorios*/
@@ -152,33 +121,28 @@ int main(int argc, char **argv){
 		sem_wait(&sem->sem3);
 
 		/*Insertar en la cola*/
-		error = queue_add(sem->q, num_aleat);
-		if(error == ERROR){
-			munmap(sem, sizeof(*sem));
-    		shm_unlink(FNAME);
-    		exit(EXIT_FAILURE);
-		}
+		sem->q.elementos[sem->q.rear] = num_aleat;
+  		sem->q.rear = (sem->q.rear + 1) % MAX_ELEM;
 		printf("Insertado %d\n", num_aleat);
 
 		sem_post(&sem->sem3);
 		sem_post(&sem->sem1);
 
     }
-    sem_wait(&sem->sem2);
-	sem_wait(&sem->sem3);
-    /*Insertar -1 al final de la cola*/
-    queue_add(sem->q, -1);
-    sem_post(&sem->sem3);
-	sem_post(&sem->sem1);
 
-    queue_print(sem->q);
+    /*Imprimimos la cola*/
+    printf("Queue < ");
+	for(int i = 0; i < sem->size; i++){
+		printf("%d ", sem->q.elementos[i]);
+	}
+	printf(">\n");
+
 
     /*Borrar memoria*/
     munmap(sem, sizeof(*sem));
-    //shm_unlink(FNAME);
-	//sem_close(sem1);
-	//sem_close(sem2);
-	//sem_close(sem3);
+    sem_destroy(&sem->sem3);
+  	sem_destroy(&sem->sem2);
+  	sem_destroy(&sem->sem1);
 	
 	exit(EXIT_SUCCESS);
 
