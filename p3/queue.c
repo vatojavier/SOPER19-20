@@ -8,9 +8,14 @@
  * @date 7/4/2020
  *
  */
-#include <stdlib.h>
 #include "queue.h"
 
+/**
+  @brief Funcion que crea una cola
+
+  @param
+  @returns cola creada
+*/
 Queue *queue_create() {
 	Queue *queue = malloc(sizeof(Queue));
 	queue->front = 0;
@@ -23,6 +28,12 @@ Queue *queue_create() {
 	return queue;
 }
 
+/**
+  @brief Funcion que destruye una cola, liberando su memoria
+
+  @param queue cola
+  @returns
+*/
 void queue_destroy(Queue *queue) {
 	if (!queue)
 		return;
@@ -30,6 +41,13 @@ void queue_destroy(Queue *queue) {
 	return;
 }
 
+/**
+  @brief Funcion que aniade un elemento a la cola
+
+  @param queue cola
+  @param new nuevo elemento que se quiere insertar
+  @returns SUCCESS si todo es correcto o ERROR si hay algún error
+*/
 STATUS queue_add(Queue *queue, int new) {
 	if (queue == NULL) return ERROR;
 	queue->elementos[queue->rear] = new;
@@ -37,6 +55,12 @@ STATUS queue_add(Queue *queue, int new) {
   	return SUCCESS;
 }
 
+/**
+  @brief Funcion que devuelve un elemento de la cola
+
+  @param queue cola
+  @returns ret_item nuevo elemento adquirido de la cola
+*/
 int queue_get(Queue *queue) {
 	if (!queue || queue_is_empty(queue))
 		return ERROR_INT;
@@ -46,7 +70,12 @@ int queue_get(Queue *queue) {
 
 	return ret_item;
 }
+/**
+  @brief Funcion que informa de si la cola esta vacía
 
+  @param queue cola
+  @returns TRUE si esta vacía o FALSE si no lo está
+*/
 BOOL queue_is_empty(Queue *queue) {
 	if(!queue)
 		return TRUE;
@@ -54,7 +83,12 @@ BOOL queue_is_empty(Queue *queue) {
 		return TRUE;
 	return FALSE;
 }
+/**
+  @brief Funcion que informa de si la cola esta llena
 
+  @param queue cola
+  @returns TRUE si esta llena o FALSE si no lo está
+*/
 BOOL queue_is_full(Queue *queue) {
 	if(!queue)
 		return TRUE;
@@ -62,17 +96,12 @@ BOOL queue_is_full(Queue *queue) {
 		return TRUE;
 	return FALSE;
 }
+/**
+  @brief Funcion que imprime una cola
 
-int queue_size(const Queue *queue){
-  if(!queue){
-    return -1;
-  }else if(queue->front <= queue->rear){
-    return (queue->rear - queue->front);
-  }else{
-    return (MAX_ELEM - (queue->front - queue->rear));
-  }
-}
-
+  @param queue cola
+  @returns SUCCESS si todo es correcto o ERROR si hay algún error
+*/
 STATUS queue_print(Queue *queue){
 
   if(!queue) 

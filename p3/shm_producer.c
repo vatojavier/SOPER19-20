@@ -1,14 +1,13 @@
 /**
  * @file shm_producer.c
  *
- * Ejercicio 4. Productor
+ * Ejercicio 4. Productor con memoria compartida
  *
  * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
  * @author Aurora Perez Lazaro aurora.perezl@estudiante.uam.es
  * @date 7/4/2020
  *
  */
-
 
 #include "queue.h"
 

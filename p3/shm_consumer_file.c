@@ -1,27 +1,13 @@
 /**
  * @file shm_consumer.c
  *
- * Ejercicio 4. Consumidor
+ * Ejercicio 4. Consumidor con el uso de ficheros
  *
  * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
  * @author Aurora Perez Lazaro aurora.perezl@estudiante.uam.es
  * @date 7/4/2020
  *
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <signal.h>
-
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <semaphore.h>
-
 #include "queue.h"
 
 #define SEMAFORO1 "/sem1"
@@ -86,7 +72,7 @@ int main(int argc, char **argv){
 
 	/*Borrar memoria*/
     munmap(sem, sizeof(*sem));
-	shm_unlink(FNAME);
+	unlink(FNAME);
 
 	exit(EXIT_SUCCESS);
 

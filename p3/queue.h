@@ -30,34 +30,74 @@
 #define MAX_ELEM 100
 
 typedef struct _Queue {
-  int elementos[MAX_ELEM];
-  int front;
-  int rear;
+  int elementos[MAX_ELEM];  /*!< array de elementos enteros de la cola*/
+  int front;				/*!< primer elemento de la cola*/
+  int rear;					/*!< ultimo elemento en la cola*/
 }Queue;
 
 
 typedef struct _Sem {
-    sem_t sem1;
-    sem_t sem2;
-    sem_t sem3;
-    Queue q;
-    int size;
+    sem_t sem1;	 /*!< semaforo 1*/
+    sem_t sem2;  /*!< semaforo 2*/
+    sem_t sem3;	 /*!< semaforo 3*/
+    Queue q;	 /*!< cola*/
+    int size;	 /*!< tamaño de la cola*/
 } Sem;
 
+/**
+  @brief Funcion que crea una cola
+
+  @param
+  @returns cola creada
+*/
 Queue* queue_create();
 
+/**
+  @brief Funcion que destruye una cola, liberando su memoria
+
+  @param queue cola
+  @returns
+*/
 void queue_destroy(Queue *queue);
 
+/**
+  @brief Funcion que aniade un elemento a la cola
+
+  @param queue cola
+  @param new nuevo elemento que se quiere insertar
+  @returns SUCCESS si todo es correcto o ERROR si hay algún error
+*/
 STATUS queue_add(Queue *queue, int new);
 
+/**
+  @brief Funcion que devuelve un elemento de la cola
+
+  @param queue cola
+  @returns ret_item nuevo elemento adquirido de la cola
+*/
 int queue_get(Queue *queue);
 
+/**
+  @brief Funcion que informa de si la cola esta llena
+
+  @param queue cola
+  @returns TRUE si esta llena o FALSE si no lo está
+*/
 BOOL queue_is_full(Queue *queue);
 
+/**
+  @brief Funcion que informa de si la cola esta vacía
+
+  @param queue cola
+  @returns TRUE si esta vacía o FALSE si no lo está
+*/
 BOOL queue_is_empty(Queue *queue);
+/**
+  @brief Funcion que imprime una cola
 
-int queue_size(const Queue *queue);
-
+  @param queue cola
+  @returns SUCCESS si todo es correcto o ERROR si hay algún error
+*/
 STATUS queue_print(Queue *queue);
 
 #endif //QUEUE_H

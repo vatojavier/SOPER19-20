@@ -1,7 +1,7 @@
 /**
  * @file shm_consumer.c
  *
- * Ejercicio 4. Consumidor
+ * Ejercicio 4. Consumidor con el uso de memoria compartida
  *
  * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
  * @author Aurora Perez Lazaro aurora.perezl@estudiante.uam.es
