@@ -114,7 +114,7 @@ int main(int argc, char **argv){
             msgs_procesados = 0;
             contador = 0;
 
-            while(1){
+            while(!got_signal_TERM){
 
                 ret = mq_receive(queue, (char *)&msg, sizeof(msg), NULL);
 
@@ -122,7 +122,7 @@ int main(int argc, char **argv){
                     perror("mq");
                     fprintf(stderr, "Error receiving message\n");
                     return EXIT_FAILURE;
-                }else if(ret == -1){// si es interumpido por llamada
+                }else if(ret == -1){// si es interumpido por llamada no pasa na
                     break;
                 }
 
@@ -131,12 +131,8 @@ int main(int argc, char **argv){
                     break;
                 }else{
                     msgs_procesados++;
-                    contador = contar_caracter(msg.trozo, caracter_cont);
+                    contador += contar_caracter(msg.trozo, caracter_cont);
                 }
-            }
-
-            while(!got_signal_TERM){
-                sleep(999);
             }
 
             printf("Hijo %d-> procesados: %d, caracteres contados: %d.\n", getpid(), msgs_procesados, contador);

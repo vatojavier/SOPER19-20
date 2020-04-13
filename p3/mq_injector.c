@@ -21,13 +21,11 @@ typedef struct {
 int main(int argc, char **argv){
 
     FILE *fp;
-    char buffer[MAX_LONG];
-
     struct mq_attr attributes = {
             .mq_flags = 0,
             .mq_maxmsg = 10,
             .mq_curmsgs = 0,
-            .mq_msgsize = sizeof(char) * MAX_LONG //2kB??
+            .mq_msgsize = sizeof(char) * MAX_LONG //2kB
     };
 
     if(argc != 3){
@@ -60,10 +58,9 @@ int main(int argc, char **argv){
 
     Mensaje msg;
     while(!feof(fp)){
-        fread(buffer, sizeof(buffer) , 1, fp); //Enviando buffer de 2kB
+        fread(msg.trozo, sizeof(msg.trozo) , 1, fp); //Enviando buffer de 2kB
 
         //Enviar mensaje a la cola
-        strcpy(msg.trozo, buffer);
         int ret = mq_send(queue, (char*)&msg, sizeof(msg), 1);
         if(ret == -1){
             perror("mq_send");

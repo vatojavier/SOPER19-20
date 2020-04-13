@@ -37,9 +37,12 @@ int senal_todos_hijos(int n_hijos,pid_t *pids, int senial){
     return 0;
 }
 
-//TODO: contar caracteres
 int contar_caracter(char *cadena, char caracter){
     int contador = 0;
+
+    if(cadena == NULL){
+        return -1;
+    }
 
     for(int i = 0; i < strlen(cadena); i++){
         if(cadena[i] == caracter){
