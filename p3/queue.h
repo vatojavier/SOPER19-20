@@ -8,10 +8,23 @@
  * @date 7/4/2020
  *
  */
+
 #ifndef QUEUE_H
 #define QUEUE_H
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <signal.h>
+
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <semaphore.h>
 #include "types.h"
 
 #define MAX_ELEM 100
@@ -22,7 +35,16 @@ typedef struct _Queue {
   int rear;
 }Queue;
 
-void queue_create(Queue *queue);
+
+typedef struct _Sem {
+    sem_t sem1;
+    sem_t sem2;
+    sem_t sem3;
+    Queue q;
+    int size;
+} Sem;
+
+Queue* queue_create();
 
 void queue_destroy(Queue *queue);
 

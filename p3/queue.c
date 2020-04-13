@@ -11,19 +11,16 @@
 #include <stdlib.h>
 #include "queue.h"
 
-void queue_create(Queue *queue) {
-	if (!queue){
-		return;
-	}
-
-	queue->front = -1;
+Queue *queue_create() {
+	Queue *queue = malloc(sizeof(Queue));
+	queue->front = 0;
 	queue->rear = -1;
 	for (int i = 0; i < MAX_ELEM; ++i)
 	{
 		queue->elementos[i] = 0;
 	}
 
-	return;
+	return queue;
 }
 
 void queue_destroy(Queue *queue) {
@@ -34,14 +31,15 @@ void queue_destroy(Queue *queue) {
 }
 
 STATUS queue_add(Queue *queue, int new) {
-	if (!queue || queue_is_full(queue) ==  TRUE) return ERROR;
+	if (queue == NULL) return ERROR;
 	queue->elementos[queue->rear] = new;
   	queue->rear = (queue->rear + 1) % MAX_ELEM;
   	return SUCCESS;
 }
 
 int queue_get(Queue *queue) {
-	if (!queue || queue_is_empty(queue)) return ERROR_INT;
+	if (!queue || queue_is_empty(queue))
+		return ERROR_INT;
 	int ret_item = queue->elementos[queue->front];
 	queue->elementos[queue->front] = 0;
 	queue->front = (queue->front + 1) % MAX_ELEM;

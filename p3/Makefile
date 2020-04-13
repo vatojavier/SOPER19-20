@@ -2,7 +2,7 @@
 CC=gcc
 CFLAGS= -g -Wall -pedantic -pthread -lrt
 LIBS = -lm
-EJEC= shm_concurrence shm_concurrence_solved shm_consumer shm_producer mq_injector mq_workers_pool
+EJEC= shm_concurrence shm_concurrence_solved shm_consumer shm_producer mq_injector mq_workers_pool shm_producer_file shm_consumer_file
 
 # $@: es lo que esta a la izq del ':'
 # $<: es el 1º item en la lista de dependencias
@@ -42,6 +42,18 @@ shm_consumer: shm_consumer.o queue.o
 shm_consumer.o: shm_consumer.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
+shm_producer_file: shm_producer_file.o queue.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+shm_producer_file.o: shm_producer_file.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+shm_consumer_file: shm_consumer_file.o queue.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+shm_consumer_file.o: shm_consumer_file.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
 queue.o:queue.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
@@ -61,5 +73,5 @@ pool_trabajadores.o: pool_trabajadores.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 clean:
-	rm -rf *.o $(EJEC)
+	rm -rf *.o $(EJEC) *.txt
 

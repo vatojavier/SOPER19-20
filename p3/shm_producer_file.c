@@ -9,17 +9,29 @@
  *
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <signal.h>
+
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <semaphore.h>
 
 #include "queue.h"
 
 #define SEMAFORO1 "/sem1"
 #define SEMAFORO2 "/sem2"
 #define SEMAFORO3 "/sem3"
-#define MEMNAME "/ej4shared"
+#define FNAME "file4b.txt"
 
 
 int main(int argc, char **argv){
-	int fd_shm = 0, error = 0;
+	int pf = 0, error = 0;
 	Sem *sem;
 
 	int n = atoi(argv[1]);
@@ -32,29 +44,27 @@ int main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
 
-    /*Creación de la memoria compartida*/
-	fd_shm = shm_open (MEMNAME, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
-    if (fd_shm == -1) {
-        fprintf(stderr, "Error creating the shared memory segment\n");
-        return EXIT_FAILURE;
-    }else {
-        printf ("Shared memory segment created\n");
-    }
+    /*Crear fichero*/
+    pf = open(FNAME, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
+	if(pf == -1){
+		fprintf (stderr, "Error creating the file \n");
+		exit(EXIT_FAILURE);
+	}
 
-    error = ftruncate(fd_shm, sizeof(Sem));
+    error = ftruncate(pf, sizeof(Sem));
 	if(error == -1){
 		fprintf (stderr, "Error resizing the shared memory segment \n");
-		shm_unlink(MEMNAME);
+		shm_unlink(FNAME);
 		exit(EXIT_FAILURE);
 	}
 
     /*Mapeo de la memoria compartida*/
-    sem = (Sem *) mmap(NULL, sizeof(Sem), PROT_READ | PROT_WRITE, MAP_SHARED, fd_shm, 0);
-    close(fd_shm);
+    sem = (Sem *) mmap(NULL, sizeof(Sem), PROT_READ | PROT_WRITE, MAP_SHARED, pf, 0);
+    close(pf);
 	if(sem == MAP_FAILED){
 		fprintf (stderr, "Error mapping the shared memory segment \n");
 		munmap(sem, sizeof(*sem));
-		shm_unlink(MEMNAME);
+		shm_unlink(FNAME);
 		exit(EXIT_FAILURE);
 	}
 
@@ -70,10 +80,10 @@ int main(int argc, char **argv){
 
 	/*Creamos semáforos*/
 	/*Ira incrementando hasta llegar al estado lleno*/
-	if (sem_init(&sem->sem1, 1, 0) ==-1) {
+	if (sem_init(&sem->sem1, 1, 0) == -1) {
         perror("sem_init");
         munmap(sem, sizeof(*sem));
-		shm_unlink(MEMNAME);
+		shm_unlink(FNAME);
 		exit(EXIT_FAILURE);
     }
 	sem_unlink(SEMAFORO1);
@@ -83,22 +93,21 @@ int main(int argc, char **argv){
         perror("sem_init");
         sem_destroy(&sem->sem1);
         munmap(sem, sizeof(*sem));
-		shm_unlink(MEMNAME);
+		shm_unlink(FNAME);
 		exit(EXIT_FAILURE);
     }
 	sem_unlink(SEMAFORO2);
 
 	/*Se encarga de controlar la zona de insertar elementos en la cola*/
-    if (sem_init(&sem->sem3, 1, 1) ==-1) {
+    if (sem_init(&sem->sem3, 1, 1) == -1) {
         perror("sem_init");
         sem_destroy(&sem->sem1);
         sem_destroy(&sem->sem2);
         munmap(sem, sizeof(*sem));
-		shm_unlink(MEMNAME);
+		shm_unlink(FNAME);
 		exit(EXIT_FAILURE);
     }
 	sem_unlink(SEMAFORO3);
-
 
     /*generar N numeros aleatorios e inyectar en cola*/
     for (int i = 0; i < n; ++i){
@@ -115,7 +124,6 @@ int main(int argc, char **argv){
 		sem->q.elementos[sem->q.rear] = num_aleat;
   		sem->q.rear = (sem->q.rear + 1) % MAX_ELEM;
 		printf("Insertado %d\n", num_aleat);
-		
 
 		sem_post(&sem->sem3);
 		sem_post(&sem->sem1);
@@ -128,6 +136,7 @@ int main(int argc, char **argv){
 		printf("%d ", sem->q.elementos[i]);
 	}
 	printf(">\n");
+
 
     /*Borrar memoria*/
     munmap(sem, sizeof(*sem));
