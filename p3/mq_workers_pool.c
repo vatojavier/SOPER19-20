@@ -37,7 +37,6 @@ Entrada:
 Salida:
 ************************************************************/
 void manejador_SIGTERM(int sig) {
-    printf("Finalizado %d\n", getpid());
     got_signal_TERM++;
 }
 
@@ -52,6 +51,7 @@ int main(int argc, char **argv){
 
     int n_trabajdores;
     int contador, msgs_procesados;
+    int ret;
     char caracter_cont;
     pid_t hijos[MAX_HIJOS];
     struct sigaction act_padre, act_hijo;
@@ -94,6 +94,8 @@ int main(int argc, char **argv){
         return EXIT_FAILURE;
     }
 
+    printf("Hijos esperando a leer de la cola\n\n");
+
     for(int i = 0; i < n_trabajdores; i++){
 
         hijos[i] = fork();
@@ -108,19 +110,27 @@ int main(int argc, char **argv){
             }
 
             Mensaje msg;
+
             msgs_procesados = 0;
             contador = 0;
+
             while(1){
 
-                if (mq_receive(queue, (char *)&msg, sizeof(msg), NULL) == -1) {
+                ret = mq_receive(queue, (char *)&msg, sizeof(msg), NULL);
+
+                if(ret == -1 && errno != EINTR){//si hay fallo
+                    perror("mq");
                     fprintf(stderr, "Error receiving message\n");
                     return EXIT_FAILURE;
+                }else if(ret == -1){// si es interumpido por llamada
+                    break;
                 }
 
                 if(strcmp(msg.trozo, "fin_de_mensaje") == 0){
                     kill(getppid(), SIGUSR2);
                     break;
                 }else{
+                    msgs_procesados++;
                     contador = contar_caracter(msg.trozo, caracter_cont);
                 }
             }
@@ -129,13 +139,10 @@ int main(int argc, char **argv){
                 sleep(999);
             }
 
-            printf("Hijo %d:\n \tprocesados: %d\n"
-                   " \tcaracteres contados: %d\n", getpid(), msgs_procesados, contador);
+            printf("Hijo %d-> procesados: %d, caracteres contados: %d.\n", getpid(), msgs_procesados, contador);
 
             exit(EXIT_SUCCESS);
-
         }
-
     }
 
     /*PADRE*/
@@ -144,6 +151,8 @@ int main(int argc, char **argv){
     }
 
     senal_todos_hijos(n_trabajdores,hijos, SIGTERM);
+
+    while(wait(NULL) > 0){}
 
     mq_close(queue);
     exit(EXIT_SUCCESS);

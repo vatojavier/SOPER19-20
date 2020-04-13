@@ -61,7 +61,6 @@ int main(int argc, char **argv){
     Mensaje msg;
     while(!feof(fp)){
         fread(buffer, sizeof(buffer) , 1, fp); //Enviando buffer de 2kB
-        printf("%s", buffer);
 
         //Enviar mensaje a la cola
         strcpy(msg.trozo, buffer);
