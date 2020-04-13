@@ -68,10 +68,15 @@ int main(int argc, char **argv){
         int ret = mq_send(queue, (char*)&msg, sizeof(msg), 1);
         if(ret == -1){
             perror("mq_send");
-            fclose(fp);
-            mq_close(queue);
-            mq_unlink(argv[2]);
+            break;
         }
+    }
+
+    /*Enviando mensaje de finalizacion*/
+    strcpy(msg.trozo, "fin_de_mensaje");
+    int ret = mq_send(queue, (char*)&msg, sizeof(msg), 1);
+    if(ret == -1){
+        perror("mq_send");
     }
 
     mq_close(queue);

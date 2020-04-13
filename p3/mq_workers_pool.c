@@ -51,7 +51,7 @@ typedef struct {
 int main(int argc, char **argv){
 
     int n_trabajdores;
-    int contador, final;
+    int contador, msgs_procesados;
     char caracter_cont;
     pid_t hijos[MAX_HIJOS];
     struct sigaction act_padre, act_hijo;
@@ -75,7 +75,6 @@ int main(int argc, char **argv){
 
     n_trabajdores = (int) strtol(argv[1], NULL, 10);
     caracter_cont = argv[3][0];
-    printf("A contar: %c\n", caracter_cont);
 
     if(n_trabajdores < 1 || n_trabajdores > 10){
         printf("Trabajadores debe ser > 0 y < 10\n");
@@ -108,19 +107,30 @@ int main(int argc, char **argv){
                 exit(EXIT_FAILURE);
             }
 
-            contador = 0;
-            final = 0;
-
             Mensaje msg;
+            msgs_procesados = 0;
+            contador = 0;
+            while(1){
 
-            if (mq_receive(queue, (char *)&msg, sizeof(msg), NULL) == -1) {
-                fprintf(stderr, "Error receiving message\n");
-                return EXIT_FAILURE;
+                if (mq_receive(queue, (char *)&msg, sizeof(msg), NULL) == -1) {
+                    fprintf(stderr, "Error receiving message\n");
+                    return EXIT_FAILURE;
+                }
+
+                if(strcmp(msg.trozo, "fin_de_mensaje") == 0){
+                    kill(getppid(), SIGUSR2);
+                    break;
+                }else{
+                    contador = contar_caracter(msg.trozo, caracter_cont);
+                }
             }
 
-            printf("%s\n", msg.trozo);
+            while(!got_signal_TERM){
+                sleep(999);
+            }
 
-            //contar_caracter(msg.trozo, caracter_cont, &final);
+            printf("Hijo %d:\n \tprocesados: %d\n"
+                   " \tcaracteres contados: %d\n", getpid(), msgs_procesados, contador);
 
             exit(EXIT_SUCCESS);
 

@@ -36,11 +36,10 @@ Descripcion:
 Entrada:
 	char *cadena: la cadena en la que se cuenta.
     char caracter: el caracter a contar
-    int *final: 1 si la cadena contiene EOF
 Salida:
 	-1 error o >= 0 num de caracteres contados en cadena
 ************************************************************/
-int contar_caracter(char *cadena, char caracter, int *final);
+int contar_caracter(char *cadena, char caracter);
 
 /***************************************************************
 Nombre: armar_manejador.

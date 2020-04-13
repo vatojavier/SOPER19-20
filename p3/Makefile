@@ -73,5 +73,5 @@ pool_trabajadores.o: pool_trabajadores.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 clean:
-	rm -rf *.o $(EJEC) *.txt
+	rm -rf *.o $(EJEC)
 
