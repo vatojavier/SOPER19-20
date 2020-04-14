@@ -1,7 +1,7 @@
 /**
- * @file mq_workers_pool.c
+ * @file mq_workers_pool_timed.c
  *
- * Programa que instancia los procesos trabajadores del ejercicio 6
+ * Programa que instancia los procesos trabajadores con temporizador del ejercicio 6
  *
  * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
  * @author Aurora Pérez Lázaro aurora.perezl@estudiante.uam.es
