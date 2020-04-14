@@ -55,6 +55,8 @@ int main(int argc, char **argv){
     char caracter_cont;
     pid_t hijos[MAX_HIJOS];
     struct sigaction act_padre, act_hijo;
+    struct timespec tm;
+    unsigned long int tiempo_espera = 100000000;
 
     struct mq_attr attributes = {
             .mq_flags = 0,
@@ -117,16 +119,20 @@ int main(int argc, char **argv){
             msgs_procesados = 0;
             contador = 0;
 
+            clock_gettime(CLOCK_REALTIME, &tm);
+            tm.tv_nsec += tiempo_espera;
+
             while(!got_signal_TERM){
 
-                ret = mq_receive(queue, (char *)&msg, sizeof(msg), NULL);
+                ret = mq_timedreceive(queue, (char *)&msg, sizeof(msg), NULL, &tm);
 
-                if(ret == -1 && errno != EINTR){//si hay fallo
+                if(ret <= 0 && (errno == ETIMEDOUT || errno == EINTR)){
+                    printf("Hijo %d no se necesita\n",getpid());
+                    exit(EXIT_SUCCESS);
+                }else if(ret == -1){
                     perror("mq");
                     fprintf(stderr, "Error receiving message\n");
                     return EXIT_FAILURE;
-                }else if(ret == -1){// si es interumpido por llamada no pasa na
-                    break;
                 }
 
                 if(strcmp(msg.trozo, "fin_de_mensaje") == 0){
