@@ -155,7 +155,7 @@ Status sort_single_process(char *file_name, int n_levels, int n_processes, int d
 /*-------------- NUEVAS FUNCIONES --------------*/
 
 
-
+Status preparar_mem_comp();
 
 /*-----------------------------------------------------------------------------------*/
 /**

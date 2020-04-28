@@ -13,13 +13,8 @@
 
 #define SHM_NAME "/LA_MEMORIA_COMP"
 
+Status preparar_mem_comp(){
 
-/*#######___ FUNCION PRINCIPAL ___#######*/
-Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int delay){
-    int i, j;
-
-
-    /*---CREANDO MEMORIA COMPARTIDA---*/
     /* We create the shared memory */
     int fd_shm = shm_open(SHM_NAME,
                           O_RDWR | O_CREAT | O_EXCL, /* Create it and open for reading and writing */
@@ -52,6 +47,18 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
         shm_unlink(SHM_NAME);
         return ERROR;
     }
+
+    return OK;
+}
+
+
+/*#######___ FUNCION PRINCIPAL ___#######*/
+Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int delay){
+    int i, j;
+
+
+    /*---CREANDO MEMORIA COMPARTIDA---*/
+    preparar_mem_comp();
     /*---FIN CREANDO MEMORIA COMPARTIDA---*/
 
 
@@ -77,6 +84,10 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
 
     plot_vector(sort->data, sort->n_elements);
     printf("\nAlgorithm completed\n");
+
+    /* Free the shared memory */
+    munmap(sort, sizeof(*sort));
+    shm_unlink(SHM_NAME);
 
     return OK;
 }
