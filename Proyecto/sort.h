@@ -4,7 +4,24 @@
 #include <mqueue.h>
 #include <semaphore.h>
 #include <sys/types.h>
+
+#include <errno.h>
+#include <fcntl.h>
+#include <math.h>
+#include <mqueue.h>
+#include <semaphore.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <time.h>
+#include <unistd.h>
+
 #include "global.h"
+#include "utils.h"
 
 /* Constants. */
 #define MAX_DATA 100000
@@ -133,5 +150,18 @@ Status solve_task(Sort *sort, int level, int part);
  * @return                  ERROR in case of error, OK otherwise.
  */
 Status sort_single_process(char *file_name, int n_levels, int n_processes, int delay);
+
+/**
+ * Resuelve proble de ordenación con multiples procesos
+ * @method sort_single_process
+ * @date   2020-04-09
+ * @author Teaching team of SOPER
+ * @param  file_name        File with the data.
+ * @param  n_levels         Total number of levels in the algorithm.
+ * @param  n_processes      Number of processes.
+ * @param  delay            Delay for the algorithm.
+ * @return                  ERROR in case of error, OK otherwise.
+ */
+Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int delay);
 
 #endif

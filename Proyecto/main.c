@@ -1,9 +1,20 @@
+/**
+ * @file main.c
+ *
+ * Main del proyecto
+ *
+ * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
+ * @author Aurora Pérez Lázaro aurora.perezl@estudiante.uam.es
+ * @date 28/4/2020
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "sort.h"
 
 int main(int argc, char *argv[]) {
-    int n_levels, n_processes, delay;
+    int n_levels, n_processes, delay, ret;
 
     if (argc < 4) {
         fprintf(stderr, "Usage: %s <FILE> <N_LEVELS> <N_PROCESSES> [<DELAY>]\n", argv[0]);
@@ -23,5 +34,12 @@ int main(int argc, char *argv[]) {
         delay = 1e8;
     }
 
-    return sort_single_process(argv[1], n_levels, n_processes, delay);
+    ret = sort_multiple_process(argv[1], n_levels, n_processes, delay);
+    if(ret == ERROR){
+        printf("Error al ordenar\n");
+        return ERROR;
+    }
+
+    printf("Completado con exito\n");
+    return OK;
 }

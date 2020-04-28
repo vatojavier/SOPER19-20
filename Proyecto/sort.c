@@ -1,19 +1,16 @@
+/**
+ * @file sort.c
+ *
+ * Implementación de las funciones de ordenación, puede contener modificaciones para multiple proceso
+ *
+ * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
+ * @author Aurora Pérez Lázaro aurora.perezl@estudiante.uam.es
+ * @date 28/4/2020
+ *
+ */
+
 #define _POSIX_C_SOURCE 200112L
 
-#include <errno.h>
-#include <fcntl.h>
-#include <math.h>
-#include <mqueue.h>
-#include <semaphore.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <time.h>
-#include <unistd.h>
 #include "sort.h"
 #include "utils.h"
 
