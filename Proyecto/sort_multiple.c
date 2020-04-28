@@ -55,16 +55,14 @@ Status preparar_mem_comp(){
 /*#######___ FUNCION PRINCIPAL ___#######*/
 Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int delay){
     int i, j;
+    pid_t pid;
 
-
-    /*---CREANDO MEMORIA COMPARTIDA---*/
     preparar_mem_comp();
-    /*---FIN CREANDO MEMORIA COMPARTIDA---*/
 
 
     /* The data is loaded and the structure initialized. */
     if (init_sort(file_name, sort, n_levels, n_processes, delay) == ERROR) {
-        fprintf(stderr, "sort_single_process - init_sort\n");
+        fprintf(stderr, "sort_multiple_process - init_sort\n");
         return ERROR;
     }
 
@@ -73,7 +71,20 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     /* For each level, and each part, the corresponding task is solved. */
     for (i = 0; i < sort->n_levels; i++) {
         for (j = 0; j < get_number_parts(i, sort->n_levels); j++) {
-            solve_task(sort, i, j);
+
+            /*Paso 2 lo entiendo así*/
+            pid = fork();
+
+            if(pid < 0) {
+                perror("fork");
+                exit(EXIT_FAILURE);
+            }else if(pid == 0) {
+                solve_task(sort, i, j);
+                exit(EXIT_SUCCESS);
+            }
+
+            while(wait(NULL) > 0){}
+
             plot_vector(sort->data, sort->n_elements);
             printf("\n%10s%10s%10s%10s%10s\n", "PID", "LEVEL", "PART", "INI", \
                 "END");

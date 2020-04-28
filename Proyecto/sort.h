@@ -154,7 +154,13 @@ Status sort_single_process(char *file_name, int n_levels, int n_processes, int d
 
 /*-------------- NUEVAS FUNCIONES --------------*/
 
-
+/**
+ * Abre, da tamaño y mapea la memoria compartida de las etructura sort
+ * @method preparar_mem_comp
+ * @date   2020-04-28
+ * @author Antonio Javier Casado - Aurora Pérez
+ * @return ERROR in case of error, OK otherwise.
+ */
 Status preparar_mem_comp();
 
 /*-----------------------------------------------------------------------------------*/
