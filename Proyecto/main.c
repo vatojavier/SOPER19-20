@@ -1,7 +1,7 @@
 /**
  * @file main.c
  *
- * Main del proyecto
+ * Main del proyecto, solo llama a sort_multiple_process()
  *
  * @author Antonio Javier Casado antonioj.casado@estudiante.uam.es
  * @author Aurora Pérez Lázaro aurora.perezl@estudiante.uam.es
@@ -9,8 +9,6 @@
  *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "sort.h"
 
 int main(int argc, char *argv[]) {

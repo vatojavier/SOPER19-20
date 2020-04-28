@@ -3,7 +3,6 @@
 
 #include <mqueue.h>
 #include <semaphore.h>
-#include <sys/types.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -60,6 +59,8 @@ typedef struct{
     int n_processes;
     pid_t ppid;
 } Sort;
+
+Sort *sort;
 
 /* Prototypes. */
 
@@ -151,6 +152,12 @@ Status solve_task(Sort *sort, int level, int part);
  */
 Status sort_single_process(char *file_name, int n_levels, int n_processes, int delay);
 
+/*-------------- NUEVAS FUNCIONES --------------*/
+
+
+
+
+/*-----------------------------------------------------------------------------------*/
 /**
  * Resuelve proble de ordenación con multiples procesos
  * @method sort_single_process

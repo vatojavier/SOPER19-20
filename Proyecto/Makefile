@@ -3,8 +3,8 @@ INC=./
 OBJ=./
 
 CC=gcc
-CFLAGS=-Wall -pedantic -ansi -g -I $(INC)
-LIBRARIES=-lrt -pthread
+CFLAGS=-Wall -pedantic -g -I $(INC) #Se ha quitado en -ansi!
+LIBRARIES=-lrt -pthread -lm
 
 ARG_FILE=./Data/DataSmall.dat
 ARG_N_LEVELS=5
