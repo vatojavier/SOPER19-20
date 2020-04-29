@@ -35,6 +35,8 @@ int main(int argc, char *argv[]) {
     ret = sort_multiple_process(argv[1], n_levels, n_processes, delay);
     if(ret == ERROR){
         printf("Error al ordenar\n");
+        munmap(sort, sizeof(*sort));
+        shm_unlink(SHM_NAME);
         return ERROR;
     }
 

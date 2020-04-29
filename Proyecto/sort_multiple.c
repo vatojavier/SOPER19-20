@@ -11,8 +11,6 @@
 
 #include "sort.h"
 
-#define SHM_NAME "/LA_MEMORIA_COMP"
-
 Status preparar_mem_comp(){
 
     /* We create the shared memory */
@@ -51,16 +49,14 @@ Status preparar_mem_comp(){
     return OK;
 }
 
-
 /*#######___ FUNCION PRINCIPAL ___#######*/
 Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int delay){
-    int i, j;
+    int i=0, j=0;
     pid_t pid;
 
     preparar_mem_comp();
 
-
-    /* The data is loaded and the structure initialized. */
+    /* The data is loaded and the structure initialized en mem. compartida */
     if (init_sort(file_name, sort, n_levels, n_processes, delay) == ERROR) {
         fprintf(stderr, "sort_multiple_process - init_sort\n");
         return ERROR;
@@ -69,29 +65,34 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     plot_vector(sort->data, sort->n_elements);
     printf("\nStarting algorithm with %d levels and %d processes...\n", sort->n_levels, sort->n_processes);
     /* For each level, and each part, the corresponding task is solved. */
+
+    /*Paso 3:*/
     for (i = 0; i < sort->n_levels; i++) {
         for (j = 0; j < get_number_parts(i, sort->n_levels); j++) {
 
-            /*Paso 2 lo entiendo así*/
             pid = fork();
 
             if(pid < 0) {
                 perror("fork");
                 exit(EXIT_FAILURE);
             }else if(pid == 0) {
+
+                /*----TRABAJADORES----*/
                 solve_task(sort, i, j);
                 exit(EXIT_SUCCESS);
             }
-
-            while(wait(NULL) > 0){}
-
-            plot_vector(sort->data, sort->n_elements);
-            printf("\n%10s%10s%10s%10s%10s\n", "PID", "LEVEL", "PART", "INI", \
-                "END");
-            printf("%10d%10d%10d%10d%10d\n", getpid(), i, j, \
-                sort->tasks[i][j].ini, sort->tasks[i][j].end);
         }
+
+        /*-----PADRE-----*/
+        plot_vector(sort->data, sort->n_elements);
+        printf("\n%10s%10s%10s%10s%10s\n", "PID", "LEVEL", "PART", "INI", \
+                "END");
+        printf("%10d%10d%10d%10d%10d\n", getpid(), i, j, \
+                sort->tasks[i][j].ini, sort->tasks[i][j].end);
+
+        while(wait(NULL) > 0){}
     }
+
 
     plot_vector(sort->data, sort->n_elements);
     printf("\nAlgorithm completed\n");

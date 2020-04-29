@@ -84,7 +84,7 @@ int get_number_parts(int level, int n_levels) {
     return 1 << (n_levels - 1 - level);
 }
 
-Status init_sort(char *file_name, Sort *sort, int n_levels, int n_processes, int delay) {
+Status init_sort(char *file_name, Sort *sort_c, int n_levels, int n_processes, int delay) {
     char string[MAX_STRING];
     FILE *file = NULL;
     int i, j, log_data;

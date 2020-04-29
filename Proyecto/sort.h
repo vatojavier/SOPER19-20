@@ -31,6 +31,9 @@
 #define PLOT_PERIOD 1
 #define NO_MID -1
 
+/*nombre de la mem. compartida*/
+#define SHM_NAME "/LA_MEMORIA_COMP"
+
 /* Type definitions. */
 
 /* Completed flag for the tasks. */
@@ -60,6 +63,7 @@ typedef struct{
     pid_t ppid;
 } Sort;
 
+/*La famosa memoria compartida*/
 Sort *sort;
 
 /* Prototypes. */
@@ -113,7 +117,7 @@ int get_number_parts(int level, int n_levels);
  * @param  delay       Delay for the algorithm.
  * @return             ERROR in case of error, OK otherwise.
  */
-Status init_sort(char *file_name, Sort *sort, int n_levels, int n_processes, int delay);
+Status init_sort(char *file_name, Sort *sort_c, int n_levels, int n_processes, int delay);
 
 /**
  * Checks if a task is ready to be solved.
@@ -162,6 +166,15 @@ Status sort_single_process(char *file_name, int n_levels, int n_processes, int d
  * @return ERROR in case of error, OK otherwise.
  */
 Status preparar_mem_comp();
+
+/**
+ * Incializa los nuevos campos añadidos a la mem. compartida, incluido semaforos
+ * @method preparar_mem_comp
+ * @date   2020-04-28
+ * @author Antonio Javier Casado - Aurora Pérez
+ * @return ERROR in case of error, OK otherwise.
+ */
+Status init_sort_multiple();
 
 /*-----------------------------------------------------------------------------------*/
 /**
