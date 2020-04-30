@@ -93,7 +93,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     printf("\nStarting algorithm with %d levels and %d processes...\n", sort->n_levels, sort->n_processes);
     /* For each level, and each part, the corresponding task is solved. */
 
-    /*Paso 3:*/
+    /*Paso 4:*/
     for (i = 0; i < sort->n_levels; i++) {
         for (j = 0; j < get_number_parts(i, sort->n_levels); j++) {
 
