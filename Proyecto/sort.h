@@ -33,6 +33,16 @@
 
 /*nombre de la mem. compartida*/
 #define SHM_NAME "/LA_MEMORIA_COMP"
+/*nombre de la cola*/
+#define MQ_NAME "/LA_COLA"
+
+/*Estructura atributos de la cola*/
+#define MAX_LONG 2000
+/*Mensaje enviado por la cola,es una tarea identificada por el nivel y parte de ese nivel*/
+typedef struct {
+    //int nivel;
+    int parte;
+} Mq_tarea;
 
 /* Type definitions. */
 
