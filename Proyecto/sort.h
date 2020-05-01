@@ -32,9 +32,11 @@
 #define NO_MID -1
 
 /*nombre de la mem. compartida*/
-#define SHM_NAME "/LA_MEMORIA_1"
+#define SHM_NAME "/LA_MEMORIA"
 /*nombre de la cola*/
-#define MQ_NAME "/LA_COLA_4"
+#define MQ_NAME "/LA_COLA"
+/*nombre del semaforo*/
+#define SEM_NAME "/sem"
 
 /*Estructura atributos de la cola*/
 #define MAX_LONG 2000
