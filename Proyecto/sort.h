@@ -171,6 +171,25 @@ Status sort_single_process(char *file_name, int n_levels, int n_processes, int d
 
 /*-------------- NUEVAS FUNCIONES --------------*/
 
+/*--- MANEJADORES ---*/
+void manejador_sigterm(int sig);
+void manejador_sigusr1(int sig);
+
+/***************************************************************
+Nombre: armar_manejador.
+Descripcion:
+    Arma un manejador de una señal.
+Entrada:
+	struct sigaction act: La estructura.
+	int signal: señal a manejar.
+	void (*fun_ptr)(int): ptro a función manjadora.
+Salida:
+	-1 error o 0 ok.
+************************************************************/
+int armar_manejador(struct sigaction *act, int signal, void (*fun_ptr)(int));
+
+void liberar_recursos(Sort *sort, mqd_t queue, sem_t *sem);
+
 /**
  * Abre, da tamaño y mapea la memoria compartida de las etructura sort
  * @method preparar_mem_comp

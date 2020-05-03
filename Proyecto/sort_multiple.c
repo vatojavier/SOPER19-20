@@ -19,9 +19,23 @@ struct mq_attr attributes = {
         .mq_msgsize = sizeof(int) //* MAX_LONG //2kB
 };
 
-void manejador_sigterm(int sig);
-void manejador_sigusr1(int sig);
-void liberar_recursos(Sort *sort, mqd_t queue, sem_t *sem);
+/* Variables compartidas*/
+static mqd_t queue;
+static sem_t *sem;
+
+/*--- MANEJADORES ---*/
+void manejador_sigterm(int sig) {
+    /* Free the shared memory */
+    munmap(sort, sizeof(*sort));
+    shm_unlink(SHM_NAME);
+
+    /*Free cola*/
+    mq_close(queue);
+    mq_unlink(MQ_NAME);
+    exit(EXIT_SUCCESS);
+}
+
+void manejador_sigusr1(int sig) {}
 
 Status preparar_mem_comp(){
 
@@ -61,6 +75,38 @@ Status preparar_mem_comp(){
     return OK;
 }
 
+void liberar_recursos(Sort *sort, mqd_t queue, sem_t *sem){
+    /* Free the shared memory */
+    munmap(sort, sizeof(*sort));
+    shm_unlink(SHM_NAME);
+
+    /*Free cola*/
+    mq_close(queue);
+    mq_unlink(MQ_NAME);
+
+    /*Free semaforo*/
+    sem_close(sem);
+}
+
+int armar_manejador(struct sigaction* act, int signal, void (*fun_ptr)(int)){
+
+    if (signal < 0 || fun_ptr == NULL){
+        return -1;
+    }
+
+    act->sa_handler = fun_ptr;
+    sigemptyset(&(act->sa_mask));
+    act->sa_flags = 0;
+    if (sigaction(signal, act, NULL) < 0) {
+        perror("Armar senial:");
+        return -1;
+    }
+
+    return 0;
+}
+
+/*--- FUNCIONES TOCHAS ---*/
+
 void trabajador(Mq_tarea mq_tarea_recv, pid_t ppid, sem_t *sem){
     /*Cola*/
     mqd_t queue_workers = mq_open(MQ_NAME,
@@ -91,31 +137,30 @@ void trabajador(Mq_tarea mq_tarea_recv, pid_t ppid, sem_t *sem){
     exit(EXIT_SUCCESS);
 }
 
-static mqd_t queue;
-static sem_t *sem;
-
 /*#######___ FUNCION PRINCIPAL ___#######*/
 Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int delay){
     int i=0, j=0;
     pid_t *pids;
     pid_t ppid = getpid();
-    struct sigaction term, usr1;
+    struct sigaction act_term, act_usr1;
     Bool completed;
 
     pids = (pid_t*)malloc(sizeof(pid_t)*n_processes);
 
-
     /*Inicializar manejador SIGTERM*/
-    term.sa_handler = manejador_sigterm;
-    term.sa_flags = 0;
-    sigemptyset(&(term.sa_mask));
+    if(armar_manejador(&act_term, SIGTERM, &manejador_sigterm) == -1){
+        fprintf(stderr, "Error creando manejador sigterm\n");
+        return ERROR;
+    }
 
     /*Inicializar manejador SIGUSR1*/
-    usr1.sa_handler = manejador_sigusr1;
-    usr1.sa_flags = 0;
-    sigemptyset(&(usr1.sa_mask));
+    if(armar_manejador(&act_usr1, SIGUSR1, &manejador_sigusr1) == -1){
+        fprintf(stderr, "Error creando manejador sigterm\n");
+        return ERROR;
+    }
 
-    if (sigaction(SIGUSR1, &usr1, NULL) == -1) {
+
+    if (sigaction(SIGUSR1, &act_usr1, NULL) == -1) {
         perror("sigaction");
         exit(EXIT_FAILURE);
     }
@@ -135,9 +180,9 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
 
     /*Creando colita*/
     queue = mq_open(MQ_NAME,
-                          O_CREAT | O_WRONLY, /* This process is only going to send messages */
-                          S_IRUSR | S_IWUSR, /* The user can read and write */
-                          &attributes);
+                    O_CREAT | O_WRONLY, /* This process is only going to send messages */
+                    S_IRUSR | S_IWUSR, /* The user can read and write */
+                    &attributes);
 
     if (queue == (mqd_t)-1) {
         perror("mq_open-padre");
@@ -160,15 +205,17 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
 
 
     /*Inicializar trabajadores*/
-    for (int i = 0; i < sort->n_processes; ++i){
+    for (i = 0; i < sort->n_processes; ++i){
         pids[i] = fork();
+
         if(pids[i] < 0) {
-                perror("fork");
-                exit(EXIT_FAILURE);
+            perror("fork");
+            exit(EXIT_FAILURE);
+
         }else if(pids[i] == 0) {
 
             /*----TRABAJADORES----*/
-            if (sigaction(SIGTERM, &term, NULL) == -1) {
+            if (sigaction(SIGTERM, &act_term, NULL) == -1) {
                 perror("sigaction");
                 return ERROR;
             }
@@ -180,6 +227,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     /*Paso 4:*/
     for (i = 0; i < sort->n_levels; i++) {
         mq_tarea_send.nivel = i;
+
         /*-----PADRE-----*/
         /*Mete en cola las tareas de este nivel y enviar*/
         for (j = 0; j < get_number_parts(mq_tarea_send.nivel, sort->n_levels); j++) {
@@ -190,19 +238,21 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
                 return ERROR;/*Y liberar todos los recursos?¿?¿?*/
             }
         }
+
         completed = FALSE;
         while(completed == FALSE){
-            
+
             sem_wait(sem);
+
             /*Recorremos las partes para saber cuantas estan completadas*/
-            for (int j = 0; j < get_number_parts(mq_tarea_send.nivel, sort->n_levels); ++j){
+            for (j = 0; j < get_number_parts(mq_tarea_send.nivel, sort->n_levels); ++j){
                 completed = TRUE;
                 if (sort->tasks[i][j].completed != COMPLETED) {
                     completed = FALSE;
                     /*Si todas las tareas estan completadas, se rompe el bucle y se sigue con el siguiente nivel*/
                 }
             }
-            sem_post(sem);   
+            sem_post(sem);
         }
 
         /*-----PADRE-----*/
@@ -233,31 +283,4 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     liberar_recursos(sort, queue, sem);
 
     return OK;
-}
-
-void manejador_sigterm(int sig) {
-    /* Free the shared memory */
-    munmap(sort, sizeof(*sort));
-    shm_unlink(SHM_NAME);
-
-    /*Free cola*/
-    mq_close(queue);
-    mq_unlink(MQ_NAME);
-    exit(EXIT_SUCCESS);
-}
-
-void manejador_sigusr1(int sig) {}
-
-void liberar_recursos(Sort *sort, mqd_t queue, sem_t *sem){
-    /* Free the shared memory */
-    munmap(sort, sizeof(*sort));
-    shm_unlink(SHM_NAME);
-
-    /*Free cola*/
-    mq_close(queue);
-    mq_unlink(MQ_NAME);
-
-    /*Free semaforo*/
-    sem_close(sem);
-
 }
