@@ -105,6 +105,16 @@ int armar_manejador(struct sigaction* act, int signal, void (*fun_ptr)(int)){
     return 0;
 }
 
+
+int senal_todos_hijos(int n_hijos,pid_t *pids, int senial){
+
+    for(int i = 0; i < n_hijos; i++){
+        kill(pids[i], senial);
+    }
+
+    return 0;
+}
+
 /*--- FUNCIONES TOCHAS ---*/
 
 void trabajador(Mq_tarea mq_tarea_recv, pid_t ppid, sem_t *sem){
@@ -147,22 +157,10 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
 
     pids = (pid_t*)malloc(sizeof(pid_t)*n_processes);
 
-    /*Inicializar manejador SIGTERM*/
-    if(armar_manejador(&act_term, SIGTERM, &manejador_sigterm) == -1){
-        fprintf(stderr, "Error creando manejador sigterm\n");
-        return ERROR;
-    }
-
-    /*Inicializar manejador SIGUSR1*/
+    /*Inicializar manejador SIGUSR1 de padre*/
     if(armar_manejador(&act_usr1, SIGUSR1, &manejador_sigusr1) == -1){
         fprintf(stderr, "Error creando manejador sigterm\n");
         return ERROR;
-    }
-
-
-    if (sigaction(SIGUSR1, &act_usr1, NULL) == -1) {
-        perror("sigaction");
-        exit(EXIT_FAILURE);
     }
 
     /*Crear semaforo*/
@@ -203,7 +201,6 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     printf("\nStarting algorithm with %d levels and %d processes...\n", sort->n_levels, sort->n_processes);
     /* For each level, and each part, the corresponding task is solved. */
 
-
     /*Inicializar trabajadores*/
     for (i = 0; i < sort->n_processes; ++i){
         pids[i] = fork();
@@ -214,11 +211,12 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
 
         }else if(pids[i] == 0) {
 
-            /*----TRABAJADORES----*/
-            if (sigaction(SIGTERM, &act_term, NULL) == -1) {
-                perror("sigaction");
+            /*Inicializar manejador SIGTERM de hijos*/
+            if(armar_manejador(&act_term, SIGTERM, &manejador_sigterm) == -1){
+                fprintf(stderr, "Error creando manejador sigterm\n");
                 return ERROR;
             }
+
             trabajador(mq_tarea_recv, ppid, sem);
 
         }
@@ -274,6 +272,11 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
             exit(EXIT_FAILURE);
         }
     }
+
+    if(senal_todos_hijos(n_processes, pids, SIGTERM) == -1){
+        fprintf(stderr, "Error matando a los hijos\n");
+    }
+
     while(wait(NULL) > 0){}
 
 

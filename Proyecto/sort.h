@@ -199,6 +199,20 @@ void liberar_recursos(Sort *sort, mqd_t queue, sem_t *sem);
  */
 Status preparar_mem_comp();
 
+
+/***************************************************************
+Nombre: senal_todos_hijos.
+Descripcion:
+    Manda señan a todos los hijos
+Entrada:
+    int n_hijos:Cuantos hijos tiene el padre
+    pid_t *pids: Array con los pids de los hijos
+    int senial: Señal a mandar
+Salida:
+	-1 error o 0 ok.
+************************************************************/
+int senal_todos_hijos(int n_hijos, pid_t *pids, int senial);
+
 /**
  * Incializa los nuevos campos añadidos a la mem. compartida, incluido semaforos
  * @method preparar_mem_comp
