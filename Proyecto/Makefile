@@ -65,7 +65,7 @@ runve: sort
 	$(ARG_DELAY) 2>&1 | grep 'error\|alloc'
 
 run_small: sort
-	@./sort ./Data/DataSmall.dat 5 10 100
+	@./sort ./Data/DataSmall.dat 5 4 100
 
 run_medium: sort
 	@./sort ./Data/DataMedium.dat 10 15 15

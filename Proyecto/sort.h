@@ -43,7 +43,7 @@
 /*Mensaje enviado por la cola,es una tarea identificada por el nivel y parte de ese nivel*/
 typedef struct {
     int nivel;
-    int parte;
+    int tarea; //tarea[0] es el nivel y tarea[1] es la parte
 } Mq_tarea;
 
 /* Type definitions. */
@@ -227,7 +227,7 @@ int senal_todos_hijos(int n_hijos, pid_t *pids, int senial);
 Status init_sort_multiple();
 
 
-void trabajador(Mq_tarea mq_tarea_recv, pid_t ppid);
+void trabajador(pid_t ppid);
 
 /*-----------------------------------------------------------------------------------*/
 /**

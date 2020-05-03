@@ -21,7 +21,7 @@ struct mq_attr attributes = {
 
 /* Variables compartidas*/
 static mqd_t queue;
-//static sem_t *sem;
+
 
 /*--- MANEJADORES ---*/
 void manejador_sigterm(int sig) {
@@ -115,7 +115,10 @@ int senal_todos_hijos(int n_hijos,pid_t *pids, int senial){
 
 /*--- FUNCIONES TOCHAS ---*/
 
-void trabajador(Mq_tarea mq_tarea_recv, pid_t ppid){
+void trabajador(pid_t ppid){
+
+    Mq_tarea mq_tarea_recv;/*Estrcutura en el que hijos recive las tareas*/
+
     /*Cola*/
     mqd_t queue_workers = mq_open(MQ_NAME,
                           O_CREAT | O_RDONLY, /* This process is only going to send messages */
@@ -131,18 +134,20 @@ void trabajador(Mq_tarea mq_tarea_recv, pid_t ppid){
             perror("mq_receive");
             exit(EXIT_FAILURE);
         }
-        solve_task(sort, mq_tarea_recv.nivel, mq_tarea_recv.parte);
+        printf("Trabajdor %d ha recibido %d, %d\n",getpid(), mq_tarea_recv.nivel, mq_tarea_recv.tarea);
+
+        solve_task(sort, mq_tarea_recv.nivel, mq_tarea_recv.tarea);
 
         sem_wait(&sort->sem);
-        sort->tasks[mq_tarea_recv.nivel][mq_tarea_recv.parte].completed = COMPLETED;
+        sort->tasks[mq_tarea_recv.nivel][mq_tarea_recv.tarea].completed = COMPLETED;
         sem_post(&sort->sem);
+
         if (kill(ppid, SIGUSR1) == -1) {
             perror("kill");
             exit(EXIT_FAILURE);
         }
     }
 
-    exit(EXIT_SUCCESS);
 }
 
 /*#######___ FUNCION PRINCIPAL ___#######*/
@@ -160,14 +165,6 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
         fprintf(stderr, "Error creando manejador sigterm\n");
         return ERROR;
     }
-
-    /*Crear semaforo*/
-    /*if ((sem = sem_open(SEM_NAME, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 1)) == SEM_FAILED) {
-        perror("sem_open escritores");
-        exit(EXIT_FAILURE);
-    }
-    sem_unlink(SEM_NAME);*/
-
 
     /*Memoria compartida*/
     if(preparar_mem_comp() == ERROR){
@@ -192,8 +189,6 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
         return ERROR;
     }
     Mq_tarea mq_tarea_send;/*Estrcutura en el que padre envia las tareas*/
-    Mq_tarea mq_tarea_recv;/*Estrcutura en el que hijos recive las tareas*/
-
 
     /* The data is loaded and the structure initialized en mem. compartida */
     if (init_sort(file_name, sort, n_levels, n_processes, delay) == ERROR) {
@@ -221,25 +216,29 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
                 return ERROR;
             }
 
-            trabajador(mq_tarea_recv, ppid);
+            printf("Trabajador creado\n");
+            trabajador(ppid);
 
         }
     }
 
     /*Paso 4:*/
     for (i = 0; i < sort->n_levels; i++) {
-        mq_tarea_send.nivel = i;
+        mq_tarea_send.nivel = 6;
 
         /*-----PADRE-----*/
         /*Mete en cola las tareas de este nivel y enviar*/
-        for (j = 0; j < get_number_parts(mq_tarea_send.nivel, sort->n_levels); j++) {
-            mq_tarea_send.parte=j;
+        for (j = 0; j < get_number_parts(i, sort->n_levels); j++) {
+            mq_tarea_send.tarea=7;
 
-            if( mq_send(queue, (char*)&mq_tarea_send, sizeof(int), 1) == -1){
+            printf("Padre enviando\n");
+            if(mq_send(queue, (char*)&mq_tarea_send, sizeof(int), 1) == -1){
                 perror("mq_send-padre tareas");
                 return ERROR;/*Y liberar todos los recursos?¿?¿?*/
             }
         }
+
+        while(wait(NULL) > 0){}//hhhmhmh
 
         completed = FALSE;
         while(completed == FALSE){
@@ -247,7 +246,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
             sem_wait(&sort->sem);
 
             /*Recorremos las partes para saber cuantas estan completadas*/
-            for (j = 0; j < get_number_parts(mq_tarea_send.nivel, sort->n_levels); ++j){
+            for (j = 0; j < get_number_parts(i, sort->n_levels); ++j){
                 completed = TRUE;
                 if (sort->tasks[i][j].completed != COMPLETED) {
                     completed = FALSE;
