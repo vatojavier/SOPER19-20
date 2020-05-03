@@ -73,6 +73,10 @@ typedef struct{
     int n_levels;
     int n_processes;
     pid_t ppid;
+
+    /*- NUEVAS COSAS -*/
+    sem_t sem; /*El sem para poner a completado las tareas*/
+
 } Sort;
 
 /*La famosa memoria compartida*/
@@ -188,7 +192,7 @@ Salida:
 ************************************************************/
 int armar_manejador(struct sigaction *act, int signal, void (*fun_ptr)(int));
 
-void liberar_recursos(Sort *sort, mqd_t queue, sem_t *sem);
+void liberar_recursos(Sort *sort, mqd_t queue);
 
 /**
  * Abre, da tamaño y mapea la memoria compartida de las etructura sort
@@ -221,6 +225,9 @@ int senal_todos_hijos(int n_hijos, pid_t *pids, int senial);
  * @return ERROR in case of error, OK otherwise.
  */
 Status init_sort_multiple();
+
+
+void trabajador(Mq_tarea mq_tarea_recv, pid_t ppid);
 
 /*-----------------------------------------------------------------------------------*/
 /**

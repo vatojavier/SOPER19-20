@@ -21,7 +21,7 @@ struct mq_attr attributes = {
 
 /* Variables compartidas*/
 static mqd_t queue;
-static sem_t *sem;
+//static sem_t *sem;
 
 /*--- MANEJADORES ---*/
 void manejador_sigterm(int sig) {
@@ -75,7 +75,7 @@ Status preparar_mem_comp(){
     return OK;
 }
 
-void liberar_recursos(Sort *sort, mqd_t queue, sem_t *sem){
+void liberar_recursos(Sort *sort, mqd_t queue){
     /* Free the shared memory */
     munmap(sort, sizeof(*sort));
     shm_unlink(SHM_NAME);
@@ -84,8 +84,6 @@ void liberar_recursos(Sort *sort, mqd_t queue, sem_t *sem){
     mq_close(queue);
     mq_unlink(MQ_NAME);
 
-    /*Free semaforo*/
-    sem_close(sem);
 }
 
 int armar_manejador(struct sigaction* act, int signal, void (*fun_ptr)(int)){
@@ -117,7 +115,7 @@ int senal_todos_hijos(int n_hijos,pid_t *pids, int senial){
 
 /*--- FUNCIONES TOCHAS ---*/
 
-void trabajador(Mq_tarea mq_tarea_recv, pid_t ppid, sem_t *sem){
+void trabajador(Mq_tarea mq_tarea_recv, pid_t ppid){
     /*Cola*/
     mqd_t queue_workers = mq_open(MQ_NAME,
                           O_CREAT | O_RDONLY, /* This process is only going to send messages */
@@ -135,9 +133,9 @@ void trabajador(Mq_tarea mq_tarea_recv, pid_t ppid, sem_t *sem){
         }
         solve_task(sort, mq_tarea_recv.nivel, mq_tarea_recv.parte);
 
-        sem_wait(sem);
+        sem_wait(&sort->sem);
         sort->tasks[mq_tarea_recv.nivel][mq_tarea_recv.parte].completed = COMPLETED;
-        sem_post(sem);
+        sem_post(&sort->sem);
         if (kill(ppid, SIGUSR1) == -1) {
             perror("kill");
             exit(EXIT_FAILURE);
@@ -164,15 +162,21 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     }
 
     /*Crear semaforo*/
-    if ((sem = sem_open(SEM_NAME, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 1)) == SEM_FAILED) {
+    /*if ((sem = sem_open(SEM_NAME, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 1)) == SEM_FAILED) {
         perror("sem_open escritores");
         exit(EXIT_FAILURE);
     }
-    sem_unlink(SEM_NAME);
+    sem_unlink(SEM_NAME);*/
+
 
     /*Memoria compartida*/
     if(preparar_mem_comp() == ERROR){
         fprintf(stderr, "Error creando mem comp\n");
+        return ERROR;
+    }
+
+    if(sem_init(&sort->sem, 1, 1) == -1){
+        perror("sem_init");
         return ERROR;
     }
 
@@ -217,7 +221,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
                 return ERROR;
             }
 
-            trabajador(mq_tarea_recv, ppid, sem);
+            trabajador(mq_tarea_recv, ppid);
 
         }
     }
@@ -240,7 +244,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
         completed = FALSE;
         while(completed == FALSE){
 
-            sem_wait(sem);
+            sem_wait(&sort->sem);
 
             /*Recorremos las partes para saber cuantas estan completadas*/
             for (j = 0; j < get_number_parts(mq_tarea_send.nivel, sort->n_levels); ++j){
@@ -250,7 +254,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
                     /*Si todas las tareas estan completadas, se rompe el bucle y se sigue con el siguiente nivel*/
                 }
             }
-            sem_post(sem);
+            sem_post(&sort->sem);
         }
 
         /*-----PADRE-----*/
@@ -268,7 +272,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     for (i = 0; i < sort->n_processes; ++i) {
         if (kill(pids[j], SIGTERM) == -1) {
             perror("kill");
-            liberar_recursos(sort, queue, sem);
+            liberar_recursos(sort, queue);
             exit(EXIT_FAILURE);
         }
     }
@@ -283,7 +287,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     plot_vector(sort->data, sort->n_elements);
     printf("\nAlgorithm completed\n");
 
-    liberar_recursos(sort, queue, sem);
+    liberar_recursos(sort, queue);
 
     return OK;
 }
