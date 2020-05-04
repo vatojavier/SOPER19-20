@@ -23,6 +23,10 @@ struct mq_attr attributes = {
 static mqd_t queue;
 static pid_t *pids;
 
+/*Tuberias*/
+int pipe_in_ilustrador[512][2]; //tuberias ilustrador recibe tarea de trabajadores
+int pipe_out_ilustrador[512][2]; //tuberias ilustrador envia a trabajadores que ya se ha impreso la movida
+
 
 /*--- MANEJADORES ---*/
 void manejador_sigterm(int sig) {
@@ -44,6 +48,14 @@ void manejador_sigint(int sig){
     while(wait(NULL) > 0){} 
     liberar_recursos();
     exit(EXIT_FAILURE);
+}
+
+void manejador_alarm(int sig){
+
+}
+
+void manejador_sigterm_ilu(int sig){
+
 }
 
 Status preparar_mem_comp(){
@@ -93,6 +105,16 @@ void liberar_recursos(){
     mq_close(queue);
     mq_unlink(MQ_NAME);
 
+//    for(int i = 0; i < sort->n_processes; i++){
+//        if(pipe(pipe_in_ilustrador[i]) == -1){
+//            perror("pipe close in");
+//        }
+//
+//        if(pipe(pipe_out_ilustrador[i]) == -1){
+//            perror("pipe close out");
+//        }
+//    }
+
     free(pids);
 }
 
@@ -127,6 +149,71 @@ int senal_todos_hijos(int n_hijos, int senial){
     return 0;
 }
 
+Status read_stat_de(int *pipe, int *nivel, int *tarea){
+    int indice = 0;
+    int estado[2];
+
+    /* Cierre del descriptor de entrada en el hijo */
+    close(pipe[1]);
+
+    /* Leer algo de la tubería*/
+    ssize_t nbytes = 0;
+    do {
+        nbytes = read(pipe[0], &estado[indice], sizeof(int));
+        if(nbytes == -1)
+        {
+            perror("read padre");
+            tarea[0]=-1;
+            return ERROR;
+        }
+        indice++;
+        /*if(nbytes > 0){
+            printf("He recibido el string: %d", *num);
+        }*/
+    } while(nbytes != 0);
+
+    *nivel = estado[0];
+    *tarea = estado[1];
+    return OK;
+}
+
+Status write_stat_en(int *pipe, int nivel, int parte){
+    int tarea[2];
+
+    tarea[0] = nivel;
+    tarea[1] = parte;
+
+    /* Cierre del descriptor de salida en el hijo */
+    close(pipe[0]);
+
+    ssize_t nbytes = write(pipe[1], tarea, sizeof(int)*2);
+    if(nbytes == -1)
+    {
+        perror("write");
+        return -1;
+    }
+    return OK;
+}
+
+Status crear_tuberias(){
+    int i;
+
+    for(i = 0; i < sort->n_processes; i++){
+        if(pipe(pipe_in_ilustrador[i]) == -1){
+            perror("pipe_in");
+            return ERROR;
+        }
+
+        if(pipe(pipe_out_ilustrador[i]) == -1){
+            printf("Error creando tuberias out_ilustrador\n");
+            return ERROR;
+        }
+    }
+
+    return OK;
+
+}
+
 /*--- FUNCIONES TOCHAS ---*/
 
 void trabajador(pid_t ppid){
@@ -143,11 +230,14 @@ void trabajador(pid_t ppid){
         exit(EXIT_FAILURE);
     }
 
+    if (alarm(SECS)) {
+        fprintf(stderr, "Existe una alarma previa establecida\n");
+    }
+
     while(1){
-        if(mq_receive(queue_workers, (char *)&mq_tarea_recv, sizeof(Mq_tarea), NULL) == -1){
-            perror("mq_receive");
-            exit(EXIT_FAILURE);
-        }
+
+        while(mq_receive(queue_workers, (char *)&mq_tarea_recv, sizeof(Mq_tarea), NULL) == -1 && errno==EINTR);
+        //Si recibe alarma aqui: realizando tarea tal
 
         solve_task(sort, mq_tarea_recv.nivel, mq_tarea_recv.tarea);
 
@@ -163,12 +253,28 @@ void trabajador(pid_t ppid){
 
 }
 
+Status ilustrador(){
+    struct sigaction act_term_il;
+
+    /*Inicializar manejador term de ilustrador*/
+    if(armar_manejador(&act_term_il, SIGTERM, &manejador_sigterm_ilu) == -1){
+        fprintf(stderr, "Error creando manejador sigusr1\n");
+        return ERROR;
+    }
+
+    free(pids);
+    return OK;
+
+}
+
 /*#######___ FUNCION PRINCIPAL ___#######*/
 Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int delay){
     int i=0, j=0, ret=0;
+    int pid;
     pid_t ppid = getpid();
-    struct sigaction act_term, act_usr1, act_int, ign_int;
+    struct sigaction act_term, act_usr1, act_int, ign_int, act_alrm;
     Bool completed;
+
 
     pids = (pid_t*)malloc(sizeof(pid_t)*n_processes);
 
@@ -207,6 +313,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     }
     Mq_tarea mq_tarea_send;/*Estrcutura en el que padre envia las tareas*/
 
+
     /* The data is loaded and the structure initialized en mem. compartida */
     if (init_sort(file_name, sort, n_levels, n_processes, delay) == ERROR) {
         fprintf(stderr, "sort_multiple_process - init_sort\n");
@@ -216,6 +323,18 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     plot_vector(sort->data, sort->n_elements);
     printf("\nStarting algorithm with %d levels and %d processes...\n", sort->n_levels, sort->n_processes);
     /* For each level, and each part, the corresponding task is solved. */
+
+    crear_tuberias();
+
+    /*Ilustrador*/
+    pid = fork();
+    if(pid < 0){
+        perror("fork");
+        exit(EXIT_FAILURE);
+    } else if (pid == 0){
+        ilustrador();
+        exit(EXIT_SUCCESS);
+    }
 
     /*Inicializar trabajadores*/
     for (i = 0; i < sort->n_processes; ++i){
@@ -227,7 +346,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
 
         }else if(pids[i] == 0) {
 
-            /*Inicializar manejador SIGTERM de hijos*/
+            /*Inicializar manejadores de hijos*/
             if(armar_manejador(&act_term, SIGTERM, &manejador_sigterm) == -1){
                 fprintf(stderr, "Error creando manejador sigterm\n");
                 return ERROR;
@@ -237,16 +356,19 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
                 return ERROR;
             }
 
-            trabajador(ppid);
+            if(armar_manejador(&act_alrm,SIGALRM,&manejador_alarm) == -1){
+                fprintf(stderr, "Error creando manejador sig_alarm\n");
+                return ERROR;
+            }
 
+            trabajador(ppid);
         }
     }
 
-    /*Paso 4:*/
+    /*-----PADRE-----*/
     for (i = 0; i < sort->n_levels; i++) {
         mq_tarea_send.nivel = i;
 
-        /*-----PADRE-----*/
         /*Mete en cola las tareas de este nivel y enviar*/
         for (j = 0; j < get_number_parts(i, sort->n_levels); j++) {
             mq_tarea_send.tarea=j;
@@ -278,7 +400,6 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
             sem_post(&sort->sem);
         }
 
-        /*-----PADRE-----*/
         plot_vector(sort->data, sort->n_elements);
         printf("\n%10s%10s%10s%10s%10s\n", "PID", "LEVEL", "PART", "INI", \
                 "END");
@@ -287,7 +408,6 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
 
         /*FIN FOR DE NIVELES*/
     }
-
 
     /*Enviar señal SIGTERM a los trabajadores*/
     if(senal_todos_hijos(n_processes, SIGTERM) == -1){

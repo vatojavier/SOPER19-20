@@ -36,6 +36,9 @@
 /*nombre de la cola*/
 #define MQ_NAME "/LA_COLA"
 
+/*Tiempo senal de alarma*/
+#define SECS 1
+
 /*Estructura atributos de la cola*/
 #define MAX_LONG 2000
 /*Mensaje enviado por la cola,es una tarea identificada por el nivel y parte de ese nivel*/
@@ -225,7 +228,44 @@ int senal_todos_hijos(int n_hijos, int senial);
 Status init_sort_multiple();
 
 
+/**
+ * Recibe tarea de un trabajador
+ * @method read_stat_de
+ * @date   2020-04-09
+ * @author Antonio Javier Casado - Aurora Pérez
+ * @param  *pipe      la tuberia de la que se recibe
+ * @param  *nivel     Nivel recibido
+ * @param  *tarea     parte recibida
+ * @return                  ERROR in case of error, OK otherwise.
+ */
+Status read_stat_de(int *pipe,int *nivel, int *tarea);
+
+
+/***************************************************************
+Nombre: write_num_de.
+Descripcion:
+    Escribe en un pipe el estado
+Entrada:
+    int *pipe: el pipe a utilizar
+    int *num: puntero a el numero a escribir
+Salida:
+    int: -1 si error, 0 si éxito
+************************************************************/
+Status write_stat_en(int *pipe, int nivel, int parte);
+
+
 void trabajador(pid_t ppid);
+
+
+/*-----------------------------------------------------------------------------------*/
+/**
+ * Fucncion de ilustrador que imprime estado
+ * @method ilustrador
+ * @date   2020-04-09
+ * @author Antonio Javier Casado - Aurora Pérez
+ * @return                  ERROR in case of error, OK otherwise.
+ */
+Status ilustrador();
 
 /*-----------------------------------------------------------------------------------*/
 /**
