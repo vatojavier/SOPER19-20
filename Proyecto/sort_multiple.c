@@ -16,7 +16,7 @@ struct mq_attr attributes = {
         .mq_flags = 0,
         .mq_maxmsg = 10,
         .mq_curmsgs = 0,
-        .mq_msgsize = sizeof(Mq_tarea) //* MAX_LONG //2kB
+        .mq_msgsize = sizeof(Mq_tarea)
 };
 
 /* Variables compartidas*/
@@ -34,12 +34,15 @@ void manejador_sigusr1(int sig) {}
 
 void manejador_sigint(int sig){
     /*Enviar señal SIGTERM a los trabajadores*/
-    if(senal_todos_hijos(sort->n_processes, pids, SIGTERM) == -1){
+
+    printf("Liberando\n");
+
+    if(senal_todos_hijos(sort->n_processes, SIGTERM) == -1){
         fprintf(stderr, "Error matando a los hijos\n");
     }
 
     while(wait(NULL) > 0){} 
-    liberar_recursos(sort, queue);
+    liberar_recursos();
     exit(EXIT_FAILURE);
 }
 
@@ -81,7 +84,7 @@ Status preparar_mem_comp(){
     return OK;
 }
 
-void liberar_recursos(Sort *sort, mqd_t queue){
+void liberar_recursos(){
     /* Free the shared memory */
     munmap(sort, sizeof(*sort));
     shm_unlink(SHM_NAME);
@@ -90,6 +93,7 @@ void liberar_recursos(Sort *sort, mqd_t queue){
     mq_close(queue);
     mq_unlink(MQ_NAME);
 
+    free(pids);
 }
 
 int armar_manejador(struct sigaction* act, int signal, void (*fun_ptr)(int)){
@@ -110,12 +114,12 @@ int armar_manejador(struct sigaction* act, int signal, void (*fun_ptr)(int)){
 }
 
 
-int senal_todos_hijos(int n_hijos,pid_t *pids, int senial){
+int senal_todos_hijos(int n_hijos, int senial){
 
     for(int i = 0; i < n_hijos; i++){
         if (kill(pids[i], senial) == -1) {
             perror("kill");
-            liberar_recursos(sort, queue);
+            liberar_recursos();
             exit(EXIT_FAILURE);
         }
     }
@@ -144,7 +148,6 @@ void trabajador(pid_t ppid){
             perror("mq_receive");
             exit(EXIT_FAILURE);
         }
-        printf("Trabajdor %d ha recibido %d, %d\n",getpid(), mq_tarea_recv.nivel, mq_tarea_recv.tarea);
 
         solve_task(sort, mq_tarea_recv.nivel, mq_tarea_recv.tarea);
 
@@ -162,7 +165,7 @@ void trabajador(pid_t ppid){
 
 /*#######___ FUNCION PRINCIPAL ___#######*/
 Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int delay){
-    int i=0, j=0;
+    int i=0, j=0, ret=0;
     pid_t ppid = getpid();
     struct sigaction act_term, act_usr1, act_int, ign_int;
     Bool completed;
@@ -234,7 +237,6 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
                 return ERROR;
             }
 
-            printf("Trabajador creado\n");
             trabajador(ppid);
 
         }
@@ -249,8 +251,10 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
         for (j = 0; j < get_number_parts(i, sort->n_levels); j++) {
             mq_tarea_send.tarea=j;
 
-            printf("Padre enviando\n");
-            if(mq_send(queue, (char*)&mq_tarea_send, sizeof(Mq_tarea), 1) == -1){
+            do{
+                ret = mq_send(queue, (char*)&mq_tarea_send, sizeof(Mq_tarea), 1);
+            }while(ret == -1 && errno == EINTR);//Si es interrumpido por usr se itenta otra vez
+            if(ret == -1 && errno != EINTR){
                 perror("mq_send-padre tareas");
                 return ERROR;/*Y liberar todos los recursos?¿?¿?*/
             }
@@ -286,17 +290,16 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
 
 
     /*Enviar señal SIGTERM a los trabajadores*/
-    if(senal_todos_hijos(n_processes, pids, SIGTERM) == -1){
+    if(senal_todos_hijos(n_processes, SIGTERM) == -1){
         fprintf(stderr, "Error matando a los hijos\n");
     }
 
     while(wait(NULL) > 0){}
 
-
     plot_vector(sort->data, sort->n_elements);
     printf("\nAlgorithm completed\n");
 
-    liberar_recursos(sort, queue);
+    liberar_recursos();
 
     return OK;
 }

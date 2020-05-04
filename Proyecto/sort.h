@@ -35,8 +35,6 @@
 #define SHM_NAME "/LA_MEMORIA"
 /*nombre de la cola*/
 #define MQ_NAME "/LA_COLA"
-/*nombre del semaforo*/
-#define SEM_NAME "/sem"
 
 /*Estructura atributos de la cola*/
 #define MAX_LONG 2000
@@ -192,7 +190,7 @@ Salida:
 ************************************************************/
 int armar_manejador(struct sigaction *act, int signal, void (*fun_ptr)(int));
 
-void liberar_recursos(Sort *sort, mqd_t queue);
+void liberar_recursos();
 
 /**
  * Abre, da tamaño y mapea la memoria compartida de las etructura sort
@@ -215,7 +213,7 @@ Entrada:
 Salida:
 	-1 error o 0 ok.
 ************************************************************/
-int senal_todos_hijos(int n_hijos, pid_t *pids, int senial);
+int senal_todos_hijos(int n_hijos, int senial);
 
 /**
  * Incializa los nuevos campos añadidos a la mem. compartida, incluido semaforos
