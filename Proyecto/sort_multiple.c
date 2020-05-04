@@ -16,7 +16,7 @@ struct mq_attr attributes = {
         .mq_flags = 0,
         .mq_maxmsg = 10,
         .mq_curmsgs = 0,
-        .mq_msgsize = sizeof(int) //* MAX_LONG //2kB
+        .mq_msgsize = sizeof(Mq_tarea) //* MAX_LONG //2kB
 };
 
 /* Variables compartidas*/
@@ -130,7 +130,7 @@ void trabajador(pid_t ppid){
     }
 
     while(1){
-        if(mq_receive(queue_workers, (char *)&mq_tarea_recv, sizeof(int), NULL) == -1){
+        if(mq_receive(queue_workers, (char *)&mq_tarea_recv, sizeof(Mq_tarea), NULL) == -1){
             perror("mq_receive");
             exit(EXIT_FAILURE);
         }
@@ -224,15 +224,15 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
 
     /*Paso 4:*/
     for (i = 0; i < sort->n_levels; i++) {
-        mq_tarea_send.nivel = 6;
+        mq_tarea_send.nivel = i;
 
         /*-----PADRE-----*/
         /*Mete en cola las tareas de este nivel y enviar*/
         for (j = 0; j < get_number_parts(i, sort->n_levels); j++) {
-            mq_tarea_send.tarea=7;
+            mq_tarea_send.tarea=j;
 
             printf("Padre enviando\n");
-            if(mq_send(queue, (char*)&mq_tarea_send, sizeof(int), 1) == -1){
+            if(mq_send(queue, (char*)&mq_tarea_send, sizeof(Mq_tarea), 1) == -1){
                 perror("mq_send-padre tareas");
                 return ERROR;/*Y liberar todos los recursos?¿?¿?*/
             }
