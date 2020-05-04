@@ -21,21 +21,27 @@ struct mq_attr attributes = {
 
 /* Variables compartidas*/
 static mqd_t queue;
+static pid_t *pids;
 
 
 /*--- MANEJADORES ---*/
 void manejador_sigterm(int sig) {
-    /* Free the shared memory */
-    munmap(sort, sizeof(*sort));
-    shm_unlink(SHM_NAME);
-
-    /*Free cola*/
-    mq_close(queue);
-    mq_unlink(MQ_NAME);
+    liberar_recursos(sort, queue);
     exit(EXIT_SUCCESS);
 }
 
 void manejador_sigusr1(int sig) {}
+
+void manejador_sigint(int sig){
+    /*Enviar señal SIGTERM a los trabajadores*/
+    if(senal_todos_hijos(sort->n_processes, pids, SIGTERM) == -1){
+        fprintf(stderr, "Error matando a los hijos\n");
+    }
+
+    while(wait(NULL) > 0){} 
+    liberar_recursos(sort, queue);
+    exit(EXIT_FAILURE);
+}
 
 Status preparar_mem_comp(){
 
@@ -107,7 +113,11 @@ int armar_manejador(struct sigaction* act, int signal, void (*fun_ptr)(int)){
 int senal_todos_hijos(int n_hijos,pid_t *pids, int senial){
 
     for(int i = 0; i < n_hijos; i++){
-        kill(pids[i], senial);
+        if (kill(pids[i], senial) == -1) {
+            perror("kill");
+            liberar_recursos(sort, queue);
+            exit(EXIT_FAILURE);
+        }
     }
 
     return 0;
@@ -153,18 +163,22 @@ void trabajador(pid_t ppid){
 /*#######___ FUNCION PRINCIPAL ___#######*/
 Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int delay){
     int i=0, j=0;
-    pid_t *pids;
     pid_t ppid = getpid();
-    struct sigaction act_term, act_usr1;
+    struct sigaction act_term, act_usr1, act_int, ign_int;
     Bool completed;
 
     pids = (pid_t*)malloc(sizeof(pid_t)*n_processes);
 
     /*Inicializar manejador SIGUSR1 de padre*/
     if(armar_manejador(&act_usr1, SIGUSR1, &manejador_sigusr1) == -1){
-        fprintf(stderr, "Error creando manejador sigterm\n");
+        fprintf(stderr, "Error creando manejador sigusr1\n");
         return ERROR;
     }
+    /*Inicializar manejador SIGINT*/
+    if(armar_manejador(&act_int, SIGINT, &manejador_sigint) == -1){
+        fprintf(stderr, "Error creando manejador sigint\n");
+        return ERROR;
+    } 
 
     /*Memoria compartida*/
     if(preparar_mem_comp() == ERROR){
@@ -213,6 +227,10 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
             /*Inicializar manejador SIGTERM de hijos*/
             if(armar_manejador(&act_term, SIGTERM, &manejador_sigterm) == -1){
                 fprintf(stderr, "Error creando manejador sigterm\n");
+                return ERROR;
+            }
+            if(armar_manejador(&ign_int, SIGINT, SIG_IGN) == -1){
+                fprintf(stderr, "Error creando manejador sig_ign\n");
                 return ERROR;
             }
 
@@ -268,14 +286,6 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
 
 
     /*Enviar señal SIGTERM a los trabajadores*/
-    for (i = 0; i < sort->n_processes; ++i) {
-        if (kill(pids[j], SIGTERM) == -1) {
-            perror("kill");
-            liberar_recursos(sort, queue);
-            exit(EXIT_FAILURE);
-        }
-    }
-
     if(senal_todos_hijos(n_processes, pids, SIGTERM) == -1){
         fprintf(stderr, "Error matando a los hijos\n");
     }
