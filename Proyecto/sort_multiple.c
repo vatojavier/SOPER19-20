@@ -27,6 +27,8 @@ static pid_t *pids;
 int pipe_in_ilustrador[512][2]; //tuberias ilustrador recibe tarea de trabajadores
 int pipe_out_ilustrador[512][2]; //tuberias ilustrador envia a trabajadores que ya se ha impreso la movida
 int pipe_prueba[2];
+static volatile sig_atomic_t got_signal_alrm = 0;
+
 
 
 /*--- MANEJADORES ---*/
@@ -52,11 +54,13 @@ void manejador_sigint(int sig){
 }
 
 void manejador_alarm(int sig){
+    printf("ALARMA!!!!!!!!\n");
+    got_signal_alrm = 1;
 
 }
 
 void manejador_sigterm_ilu(int sig){
-
+    exit(EXIT_SUCCESS);
 }
 
 Status preparar_mem_comp(){
@@ -153,6 +157,7 @@ int senal_todos_hijos(int n_hijos, int senial){
 Status read_stat_de(int *pipe, int *nivel, int *parte){
     int n_leidos = 0;
     int tarea[2];
+    //TODO: hacer que tambien reciba el pid
 
     *nivel=0;
 
@@ -170,7 +175,6 @@ Status read_stat_de(int *pipe, int *nivel, int *parte){
             parte[0]=-1;
             return ERROR;
         }
-        printf("Ilue ha leido %d\n", tarea[n_leidos]);
         n_leidos++;
     } while(nbytes != 0 && n_leidos < 2);
 
@@ -185,6 +189,7 @@ Status write_stat_en(int *pipe, int nivel, int parte){
 
     tarea[0] = nivel;
     tarea[1] = parte;
+    //TODO: hacer que tambien mande su pid
 
     /* Cierre del descriptor de salida en el hijo */
     close(pipe[0]);
@@ -218,9 +223,7 @@ Status crear_tuberias(){
 }
 
 /*--- FUNCIONES TOCHAS ---*/
-
 void trabajador(pid_t ppid, int tuberia){
-
     Mq_tarea mq_tarea_recv;/*Estrcutura en el que hijos recive las tareas*/
 
     /*Cola*/
@@ -238,9 +241,15 @@ void trabajador(pid_t ppid, int tuberia){
     }
 
     while(1){
-
         while(mq_receive(queue_workers, (char *)&mq_tarea_recv, sizeof(Mq_tarea), NULL) == -1 && errno==EINTR);
-        write_stat_en(pipe_in_ilustrador[tuberia], 6, 7);
+        if(got_signal_alrm){
+            got_signal_alrm = 0;
+            alarm(SECS);
+
+            write_stat_en(pipe_in_ilustrador[tuberia], mq_tarea_recv.nivel, mq_tarea_recv.tarea);
+            //TODO: leer permiso de ilustrador para continuar
+
+        }
 
         solve_task(sort, mq_tarea_recv.nivel, mq_tarea_recv.tarea);
 
@@ -271,14 +280,10 @@ Status ilustrador(){
         for(int i = 0; i < sort->n_processes; i++){
             read_stat_de(pipe_in_ilustrador[i], &nivel, &tarea);
             printf("Ilue ha leido de %d %d %d\n",i ,nivel, tarea);
+            //TODO: Imprimir el estado
         }
+        //TODO: enviar por tubería a todos los procesos que pueden contiuar
     }
-
-
-
-    free(pids);
-    return OK;
-
 }
 
 /*#######___ FUNCION PRINCIPAL ___#######*/
