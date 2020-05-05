@@ -229,7 +229,7 @@ Status init_sort_multiple();
 
 
 /**
- * Recibe tarea de un trabajador
+ * Recibe parte de un trabajador
  * @method read_stat_de
  * @date   2020-04-09
  * @author Antonio Javier Casado - Aurora Pérez
@@ -238,7 +238,7 @@ Status init_sort_multiple();
  * @param  *tarea     parte recibida
  * @return                  ERROR in case of error, OK otherwise.
  */
-Status read_stat_de(int *pipe,int *nivel, int *tarea);
+Status read_stat_de(int *pipe,int *nivel, int *parte);
 
 
 /***************************************************************
@@ -254,7 +254,16 @@ Salida:
 Status write_stat_en(int *pipe, int nivel, int parte);
 
 
-void trabajador(pid_t ppid);
+/**
+ * Funcion que realizan los trabajadores
+ * @method trabajador
+ * @date   2020-04-09
+ * @author Antonio Javier Casado - Aurora Pérez
+ * @param  ppid         pid padre
+ * @param  tuberia      indice de la tuberia a usar tanto para recebir como para dar
+ * @return              ERROR in case of error, OK otherwise.
+ */
+void trabajador(pid_t ppid, int tuberia);
 
 
 /*-----------------------------------------------------------------------------------*/
@@ -272,7 +281,7 @@ Status ilustrador();
  * Resuelve proble de ordenación con multiples procesos
  * @method sort_single_process
  * @date   2020-04-09
- * @author Teaching team of SOPER
+ * @author Antonio Javier Casado - Aurora Pérez
  * @param  file_name        File with the data.
  * @param  n_levels         Total number of levels in the algorithm.
  * @param  n_processes      Number of processes.

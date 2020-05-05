@@ -26,6 +26,7 @@ static pid_t *pids;
 /*Tuberias*/
 int pipe_in_ilustrador[512][2]; //tuberias ilustrador recibe tarea de trabajadores
 int pipe_out_ilustrador[512][2]; //tuberias ilustrador envia a trabajadores que ya se ha impreso la movida
+int pipe_prueba[2];
 
 
 /*--- MANEJADORES ---*/
@@ -149,9 +150,11 @@ int senal_todos_hijos(int n_hijos, int senial){
     return 0;
 }
 
-Status read_stat_de(int *pipe, int *nivel, int *tarea){
-    int indice = 0;
-    int estado[2];
+Status read_stat_de(int *pipe, int *nivel, int *parte){
+    int n_leidos = 0;
+    int tarea[2];
+
+    *nivel=0;
 
     /* Cierre del descriptor de entrada en el hijo */
     close(pipe[1]);
@@ -159,21 +162,21 @@ Status read_stat_de(int *pipe, int *nivel, int *tarea){
     /* Leer algo de la tubería*/
     ssize_t nbytes = 0;
     do {
-        nbytes = read(pipe[0], &estado[indice], sizeof(int));
+        nbytes = read(pipe[0], &tarea[n_leidos], sizeof(int));
         if(nbytes == -1)
         {
-            perror("read padre");
-            tarea[0]=-1;
+            printf("Error leyendo\n");
+            perror("read stat de");
+            parte[0]=-1;
             return ERROR;
         }
-        indice++;
-        /*if(nbytes > 0){
-            printf("He recibido el string: %d", *num);
-        }*/
-    } while(nbytes != 0);
+        printf("Ilue ha leido %d\n", tarea[n_leidos]);
+        n_leidos++;
+    } while(nbytes != 0 && n_leidos < 2);
 
-    *nivel = estado[0];
-    *tarea = estado[1];
+    *nivel = tarea[0];
+    *parte = tarea[1];
+
     return OK;
 }
 
@@ -189,8 +192,8 @@ Status write_stat_en(int *pipe, int nivel, int parte){
     ssize_t nbytes = write(pipe[1], tarea, sizeof(int)*2);
     if(nbytes == -1)
     {
-        perror("write");
-        return -1;
+        perror("write stat en");
+        return ERROR;
     }
     return OK;
 }
@@ -216,7 +219,7 @@ Status crear_tuberias(){
 
 /*--- FUNCIONES TOCHAS ---*/
 
-void trabajador(pid_t ppid){
+void trabajador(pid_t ppid, int tuberia){
 
     Mq_tarea mq_tarea_recv;/*Estrcutura en el que hijos recive las tareas*/
 
@@ -237,7 +240,7 @@ void trabajador(pid_t ppid){
     while(1){
 
         while(mq_receive(queue_workers, (char *)&mq_tarea_recv, sizeof(Mq_tarea), NULL) == -1 && errno==EINTR);
-        //Si recibe alarma aqui: realizando tarea tal
+        write_stat_en(pipe_in_ilustrador[tuberia], 6, 7);
 
         solve_task(sort, mq_tarea_recv.nivel, mq_tarea_recv.tarea);
 
@@ -255,12 +258,23 @@ void trabajador(pid_t ppid){
 
 Status ilustrador(){
     struct sigaction act_term_il;
+    int nivel = -1;
+    int tarea = -1;
 
     /*Inicializar manejador term de ilustrador*/
     if(armar_manejador(&act_term_il, SIGTERM, &manejador_sigterm_ilu) == -1){
         fprintf(stderr, "Error creando manejador sigusr1\n");
         return ERROR;
     }
+
+    while(1){
+        for(int i = 0; i < sort->n_processes; i++){
+            read_stat_de(pipe_in_ilustrador[i], &nivel, &tarea);
+            printf("Ilue ha leido de %d %d %d\n",i ,nivel, tarea);
+        }
+    }
+
+
 
     free(pids);
     return OK;
@@ -325,6 +339,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     /* For each level, and each part, the corresponding task is solved. */
 
     crear_tuberias();
+    pipe(pipe_prueba);
 
     /*Ilustrador*/
     pid = fork();
@@ -361,7 +376,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
                 return ERROR;
             }
 
-            trabajador(ppid);
+            trabajador(ppid, i);
         }
     }
 
