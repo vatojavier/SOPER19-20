@@ -238,13 +238,24 @@ Status init_sort_multiple();
  * @param  *tarea     parte recibida
  * @return                  ERROR in case of error, OK otherwise.
  */
-Status read_stat_de(int *pipe,int *nivel, int *parte);
+Status read_stat_de(int *pipe, int *pid, int *nivel, int *parte);
+
+
+/**
+ * Recibe 1 del ilustrador para continuar trabajando de
+ * @method read_cont
+ * @date   2020-04-09
+ * @author Antonio Javier Casado - Aurora Pérez
+ * @param  *pipe            la tuberia de la que se recibe
+ * @return                  ERROR in case of error, OK otherwise.
+ */
+Status read_cont(int *pipe);
 
 
 /***************************************************************
 Nombre: write_num_de.
 Descripcion:
-    Escribe en un pipe el estado
+    Escribe en un pipe el pid, nivel y tarea que está realizando
 Entrada:
     int *pipe: el pipe a utilizar
     int *num: puntero a el numero a escribir
@@ -252,6 +263,17 @@ Salida:
     int: -1 si error, 0 si éxito
 ************************************************************/
 Status write_stat_en(int *pipe, int nivel, int parte);
+
+
+/**
+ * Envia 1 para hacer saber al trabajador (correspondiente con su pipe) que siga
+ * @method write_cont
+ * @date   2020-04-09
+ * @author Antonio Javier Casado - Aurora Pérez
+ * @param  *pipe      la tuberia de la que se recibe
+ * @return            ERROR in case of error, OK otherwise.
+ */
+Status write_cont(int *pipe);
 
 
 /**

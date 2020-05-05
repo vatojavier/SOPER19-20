@@ -154,10 +154,10 @@ int senal_todos_hijos(int n_hijos, int senial){
     return 0;
 }
 
-Status read_stat_de(int *pipe, int *nivel, int *parte){
+/*--- FUNCIONES PARA TUBERIAS ---*/
+Status read_stat_de(int *pipe, int *pid, int *nivel, int *parte){
     int n_leidos = 0;
-    int tarea[2];
-    //TODO: hacer que tambien reciba el pid
+    int tarea[3];
 
     *nivel=0;
 
@@ -176,30 +176,69 @@ Status read_stat_de(int *pipe, int *nivel, int *parte){
             return ERROR;
         }
         n_leidos++;
-    } while(nbytes != 0 && n_leidos < 2);
+    } while(nbytes != 0 && n_leidos < 3);
 
-    *nivel = tarea[0];
-    *parte = tarea[1];
+    *pid = tarea[0];
+    *nivel = tarea[1];
+    *parte = tarea[2];
 
     return OK;
 }
 
 Status write_stat_en(int *pipe, int nivel, int parte){
-    int tarea[2];
+    int tarea[3];
 
-    tarea[0] = nivel;
-    tarea[1] = parte;
-    //TODO: hacer que tambien mande su pid
+    tarea[0] = getpid();
+    tarea[1] = nivel;
+    tarea[2] = parte;
 
     /* Cierre del descriptor de salida en el hijo */
     close(pipe[0]);
 
-    ssize_t nbytes = write(pipe[1], tarea, sizeof(int)*2);
+    ssize_t nbytes = write(pipe[1], tarea, sizeof(int)*3);
     if(nbytes == -1)
     {
         perror("write stat en");
         return ERROR;
     }
+    return OK;
+}
+
+Status write_cont(int *pipe){
+    int cont = 1;
+
+    close(pipe[0]);
+
+    ssize_t nbytes = write(pipe[1], &cont, sizeof(int));
+    if(nbytes == -1)
+    {
+        perror("write cont");
+        return ERROR;
+    }
+    return OK;
+
+}
+
+Status read_cont(int *pipe){
+    int n_leidos = 0;
+    int cont;
+
+    /* Cierre del descriptor de entrada en el hijo */
+    close(pipe[1]);
+
+    /* Leer algo de la tubería*/
+    ssize_t nbytes = 0;
+    do {
+        nbytes = read(pipe[0], &cont, sizeof(int));
+        if(nbytes == -1)
+        {
+            printf("Error leyendo\n");
+            perror("read cont");
+            return ERROR;
+        }
+        n_leidos++;
+    } while(nbytes != 0 && n_leidos < 1);
+
     return OK;
 }
 
@@ -269,6 +308,7 @@ Status ilustrador(){
     struct sigaction act_term_il;
     int nivel = -1;
     int tarea = -1;
+    int pid = -1;
 
     /*Inicializar manejador term de ilustrador*/
     if(armar_manejador(&act_term_il, SIGTERM, &manejador_sigterm_ilu) == -1){
@@ -278,7 +318,7 @@ Status ilustrador(){
 
     while(1){
         for(int i = 0; i < sort->n_processes; i++){
-            read_stat_de(pipe_in_ilustrador[i], &nivel, &tarea);
+            read_stat_de(pipe_in_ilustrador[i], &pid, &nivel, &tarea);
             printf("Ilue ha leido de %d %d %d\n",i ,nivel, tarea);
             //TODO: Imprimir el estado
         }
