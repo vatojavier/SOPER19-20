@@ -33,7 +33,7 @@ static volatile sig_atomic_t got_signal_alrm = 0;
 
 /*--- MANEJADORES ---*/
 void manejador_sigterm(int sig) {
-    liberar_recursos(sort, queue);
+    liberar_recursos();
     exit(EXIT_SUCCESS);
 }
 
@@ -195,7 +195,7 @@ Status write_stat_en(int *pipe, int nivel, int parte){
     /* Cierre del descriptor de salida en el hijo */
     close(pipe[0]);
 
-    ssize_t nbytes = write(pipe[1], tarea, sizeof(int)*3);
+    ssize_t nbytes = write(pipe[1], tarea, sizeof(int)*3); /**/
     if(nbytes == -1)
     {
         perror("write stat en");
@@ -320,10 +320,18 @@ Status ilustrador(){
         for(int i = 0; i < sort->n_processes; i++){
             read_stat_de(pipe_in_ilustrador[i], &pid, &nivel, &tarea);
             printf("Ilue ha leido de %d %d %d\n",pid ,nivel, tarea);
-            //TODO: Imprimir el estado
+            
         }
+        //TODO: Imprimir el estado
+        plot_vector(sort->data, sort->n_elements);
+        printf("\n%10s%10s%10s%10s%10s\n", "PID", "LEVEL", "PART", "INI", \
+                "END");
+
+
         //TODO: enviar por tubería a todos los procesos que pueden contiuar
     }
+
+    
 }
 
 /*#######___ FUNCION PRINCIPAL ___#######*/
