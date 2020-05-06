@@ -319,7 +319,7 @@ Status ilustrador(){
     while(1){
         for(int i = 0; i < sort->n_processes; i++){
             read_stat_de(pipe_in_ilustrador[i], &pid, &nivel, &tarea);
-            printf("Ilue ha leido de %d %d %d\n",i ,nivel, tarea);
+            printf("Ilue ha leido de %d %d %d\n",pid ,nivel, tarea);
             //TODO: Imprimir el estado
         }
         //TODO: enviar por tubería a todos los procesos que pueden contiuar
@@ -472,6 +472,12 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     /*Enviar señal SIGTERM a los trabajadores*/
     if(senal_todos_hijos(n_processes, SIGTERM) == -1){
         fprintf(stderr, "Error matando a los hijos\n");
+    }
+
+    if (kill(pid, SIGTERM) == -1) {
+        perror("kill");
+        liberar_recursos();
+        exit(EXIT_FAILURE);
     }
 
     while(wait(NULL) > 0){}
