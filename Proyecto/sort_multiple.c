@@ -318,15 +318,23 @@ Status ilustrador(){
 
     while(1){
         for(int i = 0; i < sort->n_processes; i++){
-            read_stat_de(pipe_in_ilustrador[i], &pid, &nivel, &tarea);
+            read_stat_de(pipe_in_ilustrador[i], &pid, &nivel, &tarea); // El problema esta aqui
             printf("Ilue ha leido de %d %d %d\n",pid ,nivel, tarea);
             
         }
         //TODO: Imprimir el estado
-        plot_vector(sort->data, sort->n_elements);
-        printf("\n%10s%10s%10s%10s%10s\n", "PID", "LEVEL", "PART", "INI", \
+        for (int i = 0; i < sort->n_levels; ++i){
+            for (int j = 0; j < get_number_parts(i, sort->n_levels); ++j)
+            {
+                plot_vector(sort->data, sort->n_elements);
+                printf("\n%10s%10s%10s%10s%10s\n", "PID", "LEVEL", "PART", "INI", \
                 "END");
-
+                printf("%10d%10d%10d%10d%10d\n", getpid(), i, j, \
+                sort->tasks[i][j].ini, sort->tasks[i][j].end);
+            }
+            
+        }
+        
 
         //TODO: enviar por tubería a todos los procesos que pueden contiuar
     }
@@ -468,11 +476,6 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
             sem_post(&sort->sem);
         }
 
-        plot_vector(sort->data, sort->n_elements);
-        printf("\n%10s%10s%10s%10s%10s\n", "PID", "LEVEL", "PART", "INI", \
-                "END");
-        printf("%10d%10d%10d%10d%10d\n", getpid(), i, j, \
-                sort->tasks[i][j].ini, sort->tasks[i][j].end);
 
         /*FIN FOR DE NIVELES*/
     }
@@ -490,7 +493,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
 
     while(wait(NULL) > 0){}
 
-    plot_vector(sort->data, sort->n_elements);
+    /*plot_vector(sort->data, sort->n_elements);*/
     printf("\nAlgorithm completed\n");
 
     liberar_recursos();
