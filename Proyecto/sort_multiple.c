@@ -162,7 +162,9 @@ Status read_stat_de(int *pipe, int *pid, int *nivel, int *parte){
     *nivel=0;
 
     /* Cierre del descriptor de entrada en el hijo */
-    close(pipe[1]);
+//    if(close(pipe[1]) == -1){
+//        printf("Error cerrando desc\n");
+//    }
 
     /* Leer algo de la tubería*/
     ssize_t nbytes = 0;
@@ -193,7 +195,9 @@ Status write_stat_en(int *pipe, int nivel, int parte){
     tarea[2] = parte;
 
     /* Cierre del descriptor de salida en el hijo */
-    close(pipe[0]);
+//    if(close(pipe[0]) == -1){
+//        printf("Error cerrando wse\n");
+//    }
 
     ssize_t nbytes = write(pipe[1], tarea, sizeof(int)*3); /**/
     if(nbytes == -1)
@@ -207,7 +211,7 @@ Status write_stat_en(int *pipe, int nivel, int parte){
 Status write_cont(int *pipe){
     int cont = 1;
 
-    close(pipe[0]);
+//    close(pipe[0]);
 
     ssize_t nbytes = write(pipe[1], &cont, sizeof(int));
     if(nbytes == -1)
@@ -224,12 +228,16 @@ Status read_cont(int *pipe){
     int cont;
 
     /* Cierre del descriptor de entrada en el hijo */
-    close(pipe[1]);
+    //close(pipe[1]);
 
     /* Leer algo de la tubería*/
     ssize_t nbytes = 0;
     do {
-        nbytes = read(pipe[0], &cont, sizeof(int));
+
+        do{
+            nbytes = read(pipe[0], &cont, sizeof(int));
+        }while(nbytes == -1 && errno == EINTR);
+
         if(nbytes == -1)
         {
             printf("Error leyendo\n");
@@ -279,26 +287,38 @@ void trabajador(pid_t ppid, int tuberia){
         fprintf(stderr, "Existe una alarma previa establecida\n");
     }
 
+    //Preparando tuberias
+    /*La de enviar*/
+    if(close(pipe_in_ilustrador[tuberia][0]) == -1){
+        printf("Error cerrando wse\n");
+    }
+    /*La de recibir cont*/
+    if(close(pipe_out_ilustrador[tuberia][1]) == -1){
+        printf("Error cerrando wse\n");
+    }
+
     while(1){
         while(mq_receive(queue_workers, (char *)&mq_tarea_recv, sizeof(Mq_tarea), NULL) == -1 && errno==EINTR);
+
+
+        solve_task(sort, mq_tarea_recv.nivel, mq_tarea_recv.tarea);
+
+        while(sem_wait(&sort->sem) == -1 && errno == EINTR);
+        sort->tasks[mq_tarea_recv.nivel][mq_tarea_recv.tarea].completed = COMPLETED;
+        while(sem_post(&sort->sem) == -1 && errno == EINTR);
+
+        if (kill(ppid, SIGUSR1) == -1) {
+            perror("kill");
+            exit(EXIT_FAILURE);
+        }
+
         if(got_signal_alrm){
             got_signal_alrm = 0;
             alarm(SECS);
 
             write_stat_en(pipe_in_ilustrador[tuberia], mq_tarea_recv.nivel, mq_tarea_recv.tarea);
-            //TODO: leer permiso de ilustrador para continuar
+            read_cont(pipe_out_ilustrador[tuberia]);
 
-        }
-
-        solve_task(sort, mq_tarea_recv.nivel, mq_tarea_recv.tarea);
-
-        sem_wait(&sort->sem);
-        sort->tasks[mq_tarea_recv.nivel][mq_tarea_recv.tarea].completed = COMPLETED;
-        sem_post(&sort->sem);
-
-        if (kill(ppid, SIGUSR1) == -1) {
-            perror("kill");
-            exit(EXIT_FAILURE);
         }
     }
 
@@ -306,9 +326,10 @@ void trabajador(pid_t ppid, int tuberia){
 
 Status ilustrador(){
     struct sigaction act_term_il;
-    int nivel = -1;
-    int tarea = -1;
-    int pid = -1;
+    int nivel, tarea, pid;
+    int pid_worker[512];
+    int nivel_worker[512];
+    int tarea_worker[512];
 
     /*Inicializar manejador term de ilustrador*/
     if(armar_manejador(&act_term_il, SIGTERM, &manejador_sigterm_ilu) == -1){
@@ -316,27 +337,43 @@ Status ilustrador(){
         return ERROR;
     }
 
+    //Preparar tuberias
+    /*Las de leer y enviar cont*/
+    for(int i = 0; i < sort->n_processes; i++){
+        if(close(pipe_in_ilustrador[i][1]) == -1){
+            printf("Error cerrando desc\n");
+        }
+        if(close(pipe_out_ilustrador[i][0]) == -1){
+            printf("Error cerrando desc\n");
+        }
+    }
+
     while(1){
         for(int i = 0; i < sort->n_processes; i++){
-            read_stat_de(pipe_in_ilustrador[i], &pid, &nivel, &tarea); // El problema esta aqui
-            printf("Ilue ha leido de %d %d %d\n",pid ,nivel, tarea);
+            read_stat_de(pipe_in_ilustrador[i], &pid_worker[i], &nivel_worker[i], &tarea_worker[i]); // El problema esta aqui
+            //printf("Ilue ha leido de %d %d %d\n",pid_worker[i], nivel_worker[i], tarea_worker[i]);
             
         }
-        //TODO: Imprimir el estado
-        for (int i = 0; i < sort->n_levels; ++i){
-            for (int j = 0; j < get_number_parts(i, sort->n_levels); ++j)
-            {
-                plot_vector(sort->data, sort->n_elements);
-                printf("\n%10s%10s%10s%10s%10s\n", "PID", "LEVEL", "PART", "INI", \
-                "END");
-                printf("%10d%10d%10d%10d%10d\n", getpid(), i, j, \
-                sort->tasks[i][j].ini, sort->tasks[i][j].end);
-            }
-            
-        }
-        
 
-        //TODO: enviar por tubería a todos los procesos que pueden contiuar
+        printf("Leido de todos los procesos\n");
+        plot_vector(sort->data, sort->n_elements);
+
+        /*Imprimiendo estado*/
+        for(int i = 0; i < sort->n_processes; i++){
+            pid = pid_worker[i];
+            nivel = nivel_worker[i];
+            tarea = tarea_worker[i];
+            printf("\n%10s%10s%10s%10s%10s\n", "PID", "LEVEL", "PART", "INI", \
+                "END");
+                printf("%10d%10d%10d%10d%10d\n", pid, nivel, tarea,
+                        sort->tasks[nivel][tarea].ini, sort->tasks[nivel][tarea].end);
+        }
+
+        /*Enviar que pueden continuar*/
+        for(int i=0; i < sort->n_processes; i++){
+            //printf("Enviando cont a %d\n", i);
+            write_cont(pipe_out_ilustrador[i]);
+        }
     }
 
     
@@ -395,7 +432,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
         return ERROR;
     }
 
-    plot_vector(sort->data, sort->n_elements);
+    //plot_vector(sort->data, sort->n_elements);
     printf("\nStarting algorithm with %d levels and %d processes...\n", sort->n_levels, sort->n_processes);
     /* For each level, and each part, the corresponding task is solved. */
 
@@ -458,7 +495,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
             }
         }
 
-        while(wait(NULL) > 0){}//hhhmhmh
+       // while(wait(NULL) > 0){}//hhhmhmh
 
         completed = FALSE;
         while(completed == FALSE){
@@ -493,7 +530,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
 
     while(wait(NULL) > 0){}
 
-    /*plot_vector(sort->data, sort->n_elements);*/
+    plot_vector(sort->data, sort->n_elements);
     printf("\nAlgorithm completed\n");
 
     liberar_recursos();
