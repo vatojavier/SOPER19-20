@@ -153,6 +153,22 @@ int senal_todos_hijos(int n_hijos, int senial){
     return 0;
 }
 
+Bool tarea_libre(){
+
+    while(sem_wait(&sort->sem_nivel_trabajo) == -1 && errno ==EINTR);
+
+    for(int i = 0; i < get_number_parts(sort->nivel_trabajo, sort->n_levels); i++){
+        if(sort->tasks[sort->nivel_trabajo][i].completed == INCOMPLETE){
+            while(sem_post(&sort->sem_nivel_trabajo) == -1 && errno ==EINTR);
+            return TRUE;//Hay tasks a realizar
+        }
+    }
+
+    while(sem_post(&sort->sem_nivel_trabajo) == -1 && errno ==EINTR);
+
+    return FALSE;
+}
+
 /*--- FUNCIONES PARA TUBERIAS ---*/
 Status read_stat_de(int *pipe, int *pid, int *nivel, int *parte){
     int n_leidos = 0;
@@ -271,6 +287,7 @@ Status crear_tuberias(){
 /*--- FUNCIONES TOCHAS ---*/
 void trabajador(pid_t ppid, int tuberia){
     Mq_tarea mq_tarea_recv;/*Estrcutura en el que hijos recive las tareas*/
+    Bool trabajando;
 
     /*Cola*/
     mqd_t queue_workers = mq_open(MQ_NAME,
@@ -299,27 +316,47 @@ void trabajador(pid_t ppid, int tuberia){
     while(1){
 
         /*LOS QUE NO TIENEN TAREA SE QUEDAN AQUÍ ESPERANDO*/
-        while(mq_receive(queue_workers, (char *)&mq_tarea_recv, sizeof(Mq_tarea), NULL) == -1 && errno==EINTR);
+        //Ver si todas las tareas del nivel actual se están procesando/completadas, si es asi, no esperar mensaje de la cola
+        if(tarea_libre() == TRUE){
+            printf("%d Tengo trabajo jaj\n", getpid());
+            while(mq_receive(queue_workers, (char *)&mq_tarea_recv, sizeof(Mq_tarea), NULL) == -1 && errno==EINTR);
+            trabajando = TRUE;
 
-        solve_task(sort, mq_tarea_recv.nivel, mq_tarea_recv.tarea);
+            //Poner que la tarea se está procesando
+            while(sem_wait(&sort->sem) == -1 && errno == EINTR);
+            sort->tasks[mq_tarea_recv.nivel][mq_tarea_recv.tarea].completed = PROCESSING;
+            while(sem_post(&sort->sem) == -1 && errno == EINTR);
 
-        while(sem_wait(&sort->sem) == -1 && errno == EINTR);
-        sort->tasks[mq_tarea_recv.nivel][mq_tarea_recv.tarea].completed = COMPLETED;
-        while(sem_post(&sort->sem) == -1 && errno == EINTR);
+            solve_task(sort, mq_tarea_recv.nivel, mq_tarea_recv.tarea);
 
-        if (kill(ppid, SIGUSR1) == -1) {
-            perror("kill");
-            exit(EXIT_FAILURE);
+            while(sem_wait(&sort->sem) == -1 && errno == EINTR);
+            sort->tasks[mq_tarea_recv.nivel][mq_tarea_recv.tarea].completed = COMPLETED;
+            while(sem_post(&sort->sem) == -1 && errno == EINTR);
+
+            if (kill(ppid, SIGUSR1) == -1) {
+                perror("kill");
+                exit(EXIT_FAILURE);
+            }
+
+        }else{
+            trabajando = FALSE;
         }
 
         if(got_signal_alrm){
             got_signal_alrm = 0;
             alarm(SECS);
 
-            /*PROBLEMA: ENVIAR SOLO LOS QUE HAN HECHO UNA TAREA*/
-            printf("%d Eviando datos\n", getpid());
-            write_stat_en(pipe_in_ilustrador[tuberia], mq_tarea_recv.nivel, mq_tarea_recv.tarea);
-            printf("%d He enviado mis datos\n", getpid());
+            if(trabajando == FALSE){
+                printf("%d no trabajo\n", getpid());
+                write_stat_en(pipe_in_ilustrador[tuberia], -7, -7);
+
+            }else{
+                /*PROBLEMA: ENVIAN SOLO LOS QUE HAN HECHO UNA TAREA*/
+                printf("%d Eviando datos\n", getpid());
+                write_stat_en(pipe_in_ilustrador[tuberia], mq_tarea_recv.nivel, mq_tarea_recv.tarea);
+                printf("%d He enviado mis datos\n", getpid());
+            }
+
             read_cont(pipe_out_ilustrador[tuberia]);
             printf("%d puedo continuar\n", getpid());
 
@@ -360,7 +397,6 @@ Status ilustrador(){
             printf("Termino!!!!!!!!!!!!!!!!!!!!!!!!!!coño\n");
         }
 
-        /*PROBLEMA: HACER QUE LEA SOLO LA INFO DE LOS PROCESOS QUE HAN HECHO UNA TAREA, SI NO SE QUEDA ESPERANDO EN EL READ*/
         for(int i = 0; i < sort->n_processes; i++){
             read_stat_de(pipe_in_ilustrador[i], &pid_worker[i], &nivel_worker[i], &tarea_worker[i]);
             //printf("Ilue ha leido de %d %d %d\n",pid_worker[i], nivel_worker[i], tarea_worker[i]);
@@ -388,8 +424,6 @@ Status ilustrador(){
             write_cont(pipe_out_ilustrador[i]);
         }
     }
-
-    
 }
 
 /*#######___ FUNCION PRINCIPAL ___#######*/
@@ -427,6 +461,11 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
 
     if(sem_init(&sort->sem_fin, 1, 0) == -1){
         perror("sem_init fin");
+        return ERROR;
+    }
+
+    if(sem_init(&sort->sem_nivel_trabajo, 1, 1) == -1){
+        perror("sem_init nivel");
         return ERROR;
     }
 
@@ -499,6 +538,10 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     /*-----PADRE-----*/
     for (i = 0; i < sort->n_levels; i++) {
         mq_tarea_send.nivel = i;
+
+        while(sem_wait(&sort->sem_nivel_trabajo) == -1 && errno ==EINTR);
+        sort->nivel_trabajo = i;
+        while(sem_post(&sort->sem_nivel_trabajo) == -1 && errno ==EINTR);
 
         /*Mete en cola las tareas de este nivel y enviar*/
         for (j = 0; j < get_number_parts(i, sort->n_levels); j++) {

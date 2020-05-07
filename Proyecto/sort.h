@@ -78,6 +78,9 @@ typedef struct{
     /*- NUEVAS COSAS -*/
     sem_t sem; /*El sem para poner a completado las tareas*/
     sem_t sem_fin; /*ilustrador ha terminado de imprimir la ultima info*/
+    sem_t sem_nivel_trabajo;/*Semaforo para controlar el nivel actual de trabajo*/
+
+    int nivel_trabajo; /*Nivel en el que se esta trabajando actualmente*/
 
 } Sort;
 
