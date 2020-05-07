@@ -54,9 +54,8 @@ void manejador_sigint(int sig){
 }
 
 void manejador_alarm(int sig){
-    printf("ALARMA!!!!!!!!\n");
-    got_signal_alrm = 1;
-
+    printf("ALARMA!!!!!!!!%d\n", got_signal_alrm);
+    got_signal_alrm ++;
 }
 
 void manejador_sigterm_ilu(int sig){
@@ -298,8 +297,9 @@ void trabajador(pid_t ppid, int tuberia){
     }
 
     while(1){
-        while(mq_receive(queue_workers, (char *)&mq_tarea_recv, sizeof(Mq_tarea), NULL) == -1 && errno==EINTR);
 
+        /*LOS QUE NO TIENEN TAREA SE QUEDAN AQUÍ ESPERANDO*/
+        while(mq_receive(queue_workers, (char *)&mq_tarea_recv, sizeof(Mq_tarea), NULL) == -1 && errno==EINTR);
 
         solve_task(sort, mq_tarea_recv.nivel, mq_tarea_recv.tarea);
 
@@ -316,8 +316,12 @@ void trabajador(pid_t ppid, int tuberia){
             got_signal_alrm = 0;
             alarm(SECS);
 
+            /*PROBLEMA: ENVIAR SOLO LOS QUE HAN HECHO UNA TAREA*/
+            printf("%d Eviando datos\n", getpid());
             write_stat_en(pipe_in_ilustrador[tuberia], mq_tarea_recv.nivel, mq_tarea_recv.tarea);
+            printf("%d He enviado mis datos\n", getpid());
             read_cont(pipe_out_ilustrador[tuberia]);
+            printf("%d puedo continuar\n", getpid());
 
         }
     }
@@ -349,10 +353,18 @@ Status ilustrador(){
     }
 
     while(1){
+
+        /*Si la (unica) tarea del ultimo nivel está impresa y completada...*/
+        if(sort->tasks[sort->n_levels - 1][0].completed == COMPLETED){
+            sem_post(&sort->sem_fin);
+            printf("Termino!!!!!!!!!!!!!!!!!!!!!!!!!!coño\n");
+        }
+
+        /*PROBLEMA: HACER QUE LEA SOLO LA INFO DE LOS PROCESOS QUE HAN HECHO UNA TAREA, SI NO SE QUEDA ESPERANDO EN EL READ*/
         for(int i = 0; i < sort->n_processes; i++){
-            read_stat_de(pipe_in_ilustrador[i], &pid_worker[i], &nivel_worker[i], &tarea_worker[i]); // El problema esta aqui
+            read_stat_de(pipe_in_ilustrador[i], &pid_worker[i], &nivel_worker[i], &tarea_worker[i]);
             //printf("Ilue ha leido de %d %d %d\n",pid_worker[i], nivel_worker[i], tarea_worker[i]);
-            
+            printf("he leido datos de %d\n",pid_worker[i]);
         }
 
         printf("Leido de todos los procesos\n");
@@ -370,6 +382,7 @@ Status ilustrador(){
         }
 
         /*Enviar que pueden continuar*/
+        /*PROBLEMA: ENVIAR QUE CONTINUEN SOLO LOS PROCESOS QUE HAN ENVIADO INFO, SI NO, SE QUEDA ESPERANDO A QUE LOS QUE NO HAN HECHO NADA LEEAN*/
         for(int i=0; i < sort->n_processes; i++){
             //printf("Enviando cont a %d\n", i);
             write_cont(pipe_out_ilustrador[i]);
@@ -409,6 +422,11 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
 
     if(sem_init(&sort->sem, 1, 1) == -1){
         perror("sem_init");
+        return ERROR;
+    }
+
+    if(sem_init(&sort->sem_fin, 1, 0) == -1){
+        perror("sem_init fin");
         return ERROR;
     }
 
@@ -513,11 +531,13 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
             sem_post(&sort->sem);
         }
 
-
         /*FIN FOR DE NIVELES*/
     }
 
-    /*Enviar señal SIGTERM a los trabajadores*/
+    /*Hasta que ilustrador no imprima último estado no mata a nadie*/
+    while(sem_wait(&sort->sem_fin) == -1 && errno == EINTR);
+
+    /*Enviar señal SIGTERM a los trabajadores CUANDO TERMINE DE IMPRIMIR NO?*/
     if(senal_todos_hijos(n_processes, SIGTERM) == -1){
         fprintf(stderr, "Error matando a los hijos\n");
     }
@@ -530,7 +550,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
 
     while(wait(NULL) > 0){}
 
-    plot_vector(sort->data, sort->n_elements);
+//    plot_vector(sort->data, sort->n_elements);
     printf("\nAlgorithm completed\n");
 
     liberar_recursos();

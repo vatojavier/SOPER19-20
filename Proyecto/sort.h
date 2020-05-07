@@ -77,6 +77,7 @@ typedef struct{
 
     /*- NUEVAS COSAS -*/
     sem_t sem; /*El sem para poner a completado las tareas*/
+    sem_t sem_fin; /*ilustrador ha terminado de imprimir la ultima info*/
 
 } Sort;
 
