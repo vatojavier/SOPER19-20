@@ -155,16 +155,11 @@ int senal_todos_hijos(int n_hijos, int senial){
 
 Bool tarea_libre(){
 
-    while(sem_wait(&sort->sem_nivel_trabajo) == -1 && errno ==EINTR);
-
     for(int i = 0; i < get_number_parts(sort->nivel_trabajo, sort->n_levels); i++){
         if(sort->tasks[sort->nivel_trabajo][i].completed == INCOMPLETE){
-            while(sem_post(&sort->sem_nivel_trabajo) == -1 && errno ==EINTR);
             return TRUE;//Hay tasks a realizar
         }
     }
-
-    while(sem_post(&sort->sem_nivel_trabajo) == -1 && errno ==EINTR);
 
     return FALSE;
 }
@@ -287,12 +282,13 @@ Status crear_tuberias(){
 /*--- FUNCIONES TOCHAS ---*/
 void trabajador(pid_t ppid, int tuberia){
     Mq_tarea mq_tarea_recv;/*Estrcutura en el que hijos recive las tareas*/
-    Bool trabajando;
+    Bool trabajando = TRUE;
+    Bool libre;
 
     /*Cola*/
     mqd_t queue_workers = mq_open(MQ_NAME,
                           O_CREAT | O_RDONLY, /* This process is only going to send messages */
-                          S_IRUSR | S_IWUSR, /* The user can read and write */
+                          S_IRUSR | S_IWUSR | O_NONBLOCK, /* The user can read and write */
                           &attributes);
     if(queue_workers == (mqd_t)-1) {
         fprintf(stderr, "Error opening the queue\n");
@@ -315,18 +311,26 @@ void trabajador(pid_t ppid, int tuberia){
 
     while(1){
 
-        /*LOS QUE NO TIENEN TAREA SE QUEDAN AQUÍ ESPERANDO*/
         //Ver si todas las tareas del nivel actual se están procesando/completadas, si es asi, no esperar mensaje de la cola
-        if(tarea_libre() == TRUE){
+
+        while(mq_receive(queue_workers, (char *)&mq_tarea_recv, sizeof(Mq_tarea), NULL) == -1 && errno==EINTR);
+
+        if(errno == EAGAIN){
+            printf("%d NO Tengo trabajo jaj\n", getpid());
+            trabajando = FALSE;
+        }else{
             printf("%d Tengo trabajo jaj\n", getpid());
-            while(mq_receive(queue_workers, (char *)&mq_tarea_recv, sizeof(Mq_tarea), NULL) == -1 && errno==EINTR);
             trabajando = TRUE;
+        }
+        perror("K KOJONES");
 
-            //Poner que la tarea se está procesando
-            while(sem_wait(&sort->sem) == -1 && errno == EINTR);
-            sort->tasks[mq_tarea_recv.nivel][mq_tarea_recv.tarea].completed = PROCESSING;
-            while(sem_post(&sort->sem) == -1 && errno == EINTR);
 
+        //Poner que la tarea se está procesando
+//            while(sem_wait(&sort->sem) == -1 && errno == EINTR);
+//            sort->tasks[mq_tarea_recv.nivel][mq_tarea_recv.tarea].completed = PROCESSING;
+//            while(sem_post(&sort->sem) == -1 && errno == EINTR);
+
+        if(trabajando == TRUE){
             solve_task(sort, mq_tarea_recv.nivel, mq_tarea_recv.tarea);
 
             while(sem_wait(&sort->sem) == -1 && errno == EINTR);
@@ -337,9 +341,6 @@ void trabajador(pid_t ppid, int tuberia){
                 perror("kill");
                 exit(EXIT_FAILURE);
             }
-
-        }else{
-            trabajando = FALSE;
         }
 
         if(got_signal_alrm){
