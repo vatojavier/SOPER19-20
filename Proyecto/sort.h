@@ -79,8 +79,10 @@ typedef struct{
     sem_t sem; /*El sem para poner a completado las tareas*/
     sem_t sem_fin; /*ilustrador ha terminado de imprimir la ultima info*/
     sem_t sem_nivel_trabajo;/*Semaforo para controlar el nivel actual de trabajo*/
+    sem_t sem_pipe;/*Para asignar pipes a los trabajdores*/
 
     int nivel_trabajo; /*Nivel en el que se esta trabajando actualmente*/
+    int pipe;/*puntero de asignacion de tueria*/
 
 } Sort;
 

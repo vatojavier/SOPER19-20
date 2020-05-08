@@ -162,6 +162,7 @@ Status init_sort(char *file_name, Sort *sort_c, int n_levels, int n_processes, i
     }
 
     sort->nivel_trabajo = 0;
+    sort->pipe=0;
 
     return OK;
 }
