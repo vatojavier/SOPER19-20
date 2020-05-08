@@ -26,7 +26,7 @@ static pid_t *pids;
 /*Tuberias*/
 int pipe_in_ilustrador[512][2]; //tuberias ilustrador recibe tarea de trabajadores
 int pipe_out_ilustrador[512][2]; //tuberias ilustrador envia a trabajadores que ya se ha impreso la movida
-int pipe_prueba[2];
+
 static volatile sig_atomic_t got_signal_alrm = 0;
 
 
@@ -363,8 +363,13 @@ Status ilustrador(){
             nivel = nivel_worker[i];
             tarea = tarea_worker[i];
 
+            if(nivel == 11){
+                printf("%10d\tSIN TAREA\n", pid);
+            }else{
                 printf("%10d%10d%10d%10d%10d\n", pid, nivel, tarea,
-                        sort->tasks[nivel][tarea].ini, sort->tasks[nivel][tarea].end);
+                       sort->tasks[nivel][tarea].ini, sort->tasks[nivel][tarea].end);
+            }
+
         }
 
         /*Si la (unica) tarea del ultimo nivel está impresa y completada...*/
@@ -417,16 +422,6 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
         return ERROR;
     }
 
-    if(sem_init(&sort->sem_nivel_trabajo, 1, 1) == -1){
-        perror("sem_init nivel");
-        return ERROR;
-    }
-
-    if(sem_init(&sort->sem_pipe, 1, 1) == -1){
-        perror("sem_init nivel");
-        return ERROR;
-    }
-
     /*Creando colita*/
     queue = mq_open(MQ_NAME,
                     O_CREAT | O_WRONLY, /* This process is only going to send messages */
@@ -451,7 +446,6 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     /* For each level, and each part, the corresponding task is solved. */
 
     crear_tuberias();
-    pipe(pipe_prueba);
 
     /*Ilustrador*/
     pid = fork();
@@ -495,9 +489,7 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     for (i = 0; i < sort->n_levels; i++) {
         mq_tarea_send.nivel = i;
 
-        while(sem_wait(&sort->sem_nivel_trabajo) == -1 && errno ==EINTR);
         sort->nivel_trabajo = i;
-        while(sem_post(&sort->sem_nivel_trabajo) == -1 && errno ==EINTR);
 
         /*Mete en cola las tareas de este nivel y enviar*/
         for (j = 0; j < get_number_parts(i, sort->n_levels); j++) {
