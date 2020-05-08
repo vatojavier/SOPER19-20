@@ -546,8 +546,6 @@ Status sort_multiple_process(char *file_name, int n_levels, int n_processes, int
     }
 
     while(wait(NULL) > 0){}
-
-//    plot_vector(sort->data, sort->n_elements);
     printf("\nAlgorithm completed\n");
 
     liberar_recursos();
