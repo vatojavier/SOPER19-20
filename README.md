@@ -1,7 +1,7 @@
 # SOPER19-20
 Sistemas Operativos 2019-2020
 
-#Proyecto final:
+# Proyecto final:
 
 Nuevas funciones a realizar en **sort_multiple.c**
 
